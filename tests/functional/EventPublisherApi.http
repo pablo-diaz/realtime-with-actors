@@ -1,0 +1,13 @@
+@EventPublisherApi_HostAddress = http://localhost:5264
+
+POST {{EventPublisherApi_HostAddress}}/event/
+content-type: application/json
+
+{
+    "DevId": "AL-0001",
+    "Temp": 15.6,
+    "Lat": 13.5699,
+    "Lon": 35.6974
+}
+
+###

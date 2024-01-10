@@ -1,0 +1,11 @@
+# https://hub.docker.com/_/rabbitmq
+
+docker run -d --hostname my-rabbit --name some-rabbit -p 8080:15672 -p 5672:5672 rabbitmq
+
+docker exec -it some-rabbit /bin/bash
+
+rabbitmq-plugins enable rabbitmq_management
+
+docker container stop some-rabbit
+
+docker container remove some-rabbit
