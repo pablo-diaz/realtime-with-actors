@@ -30,19 +30,14 @@ public class DeviceEventConsumer: IHostedService, IDisposable
         {
             _serviceScope = this._serviceProvider.CreateScope();
             _messageReceiver = _serviceScope.ServiceProvider.GetRequiredService<Services.IMessageReceiver>();
-            return _messageReceiver.StartReceivingMessages<Messages.DeviceEvent>(ProcessMessage);
+             var actorSystemConfig = _serviceScope.ServiceProvider.GetRequiredService<Infrastructure.ActorSystemConfiguration>();
+            return _messageReceiver.StartReceivingMessages<Messages.DeviceEvent>(message => MessageProcessor.Process(message, actorSystemConfig));
         }
         catch(Exception ex)
         {
             Console.Error.WriteLine($"[DeviceEventConsumer Job]: {ex.Message}");
             return Task.CompletedTask;
         }
-    }
-
-    private Task ProcessMessage(Messages.DeviceEvent @event)
-    {
-        Console.WriteLine($"Nuevo mensaje: DevId: '{@event.DeviceId}'");
-        return Task.CompletedTask;
     }
 
     public virtual Task StopAsync(CancellationToken cancellationToken)
