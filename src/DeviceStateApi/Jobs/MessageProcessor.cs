@@ -8,10 +8,7 @@ public static class MessageProcessor
 {
     public static Task Process(Messages.DeviceEvent message, Infrastructure.ActorSystemConfiguration usingActorSystemConfig)
     {
-        System.Console.WriteLine($"Nuevo mensaje: DevId: '{message.DeviceId}'");
-
-        var messageToActorSystem = Map(from: message);
-
+        usingActorSystemConfig.ActorSystem.Root.Send(usingActorSystemConfig.DeviceManagerActor, Map(from: message));
         return Task.CompletedTask;
     }
 

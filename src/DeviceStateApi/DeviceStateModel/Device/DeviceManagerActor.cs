@@ -23,11 +23,11 @@ public class DeviceManagerActor: IActor
 
     private Task Process(IContext context, TemperatureTraced message)
     {
-        (var devicePid, bool wasItJustCreated) = GetOrCreateDevice(context, message.DeviceId,
+        (var devicePid, bool deviceWasJustCreated) = GetOrCreateDevice(context, message.DeviceId,
             () => new DeviceActor(withDeviceId: message.DeviceId, initialLoggedDate: message.LoggedAt,
                                   initialTemperature: message.Temperature, initialCoords: message.Coords));
 
-        if(wasItJustCreated)
+        if(deviceWasJustCreated == false)
             context.Send(devicePid, message);
 
         return Task.CompletedTask;
