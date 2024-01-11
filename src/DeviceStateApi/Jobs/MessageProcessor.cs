@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 
+using DeviceStateModel.Device;
+
 namespace Jobs;
 
 public static class MessageProcessor
@@ -7,6 +9,13 @@ public static class MessageProcessor
     public static Task Process(Messages.DeviceEvent message, Infrastructure.ActorSystemConfiguration usingActorSystemConfig)
     {
         System.Console.WriteLine($"Nuevo mensaje: DevId: '{message.DeviceId}'");
+
+        var messageToActorSystem = Map(from: message);
+
         return Task.CompletedTask;
     }
+
+    private static TemperatureTraced Map(Messages.DeviceEvent from) =>
+        new TemperatureTraced(DeviceId: from.DeviceId, LoggedAt: from.At, Temperature: from.Temperature,
+            Coords: new (Latitude: from.Latitude, Longitude: from.Longitude));
 }

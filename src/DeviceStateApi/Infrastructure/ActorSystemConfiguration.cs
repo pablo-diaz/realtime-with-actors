@@ -16,12 +16,10 @@ public static class ActorSystemConfigurationExtensions
             var actorSystem = new ActorSystem(ActorSystemConfig.Setup())
                 .WithServiceProvider(provider);
 
-            var deviceManagerProps = Props.FromProducer(() => new DeviceManagerActor());
             var watchingZoneManagerProps = Props.FromProducer(() => new WatchingZoneManagerActor());
+            var deviceManagerProps = Props.FromProducer(() => new DeviceManagerActor(watchingZoneManager: actorSystem.Root.Spawn(watchingZoneManagerProps)));
 
-            return new ActorSystemConfiguration(withActorSystem: actorSystem,
-                withDeviceManagerActor: actorSystem.Root.Spawn(deviceManagerProps),
-                withWatchingZoneManagerActor: actorSystem.Root.Spawn(watchingZoneManagerProps));
+            return new ActorSystemConfiguration(withActorSystem: actorSystem, withDeviceManagerActor: actorSystem.Root.Spawn(deviceManagerProps));
         });
     }
 }
@@ -30,12 +28,10 @@ public class ActorSystemConfiguration
 {
     public ActorSystem ActorSystem { get; }
     public PID DeviceManagerActor { get; }
-    public PID WatchingZoneManagerActor { get; }
 
-    public ActorSystemConfiguration(ActorSystem withActorSystem, PID withDeviceManagerActor, PID withWatchingZoneManagerActor)
+    public ActorSystemConfiguration(ActorSystem withActorSystem, PID withDeviceManagerActor)
     {
         ActorSystem = withActorSystem;
         DeviceManagerActor = withDeviceManagerActor;
-        WatchingZoneManagerActor = withWatchingZoneManagerActor;
     }
 }
