@@ -4,9 +4,9 @@ POST {{EventPublisherApi_HostAddress}}/event/
 content-type: application/json
 
 {
-    "DevId": "AL-0004",
-    "Temp": 15.7,
-    "Lat": 13.5699,
+    "DevId": "AL-0001",
+    "Temp": 15.5,
+    "Lat": 13.5698,
     "Lon": 35.6974
 }
 

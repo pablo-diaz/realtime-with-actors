@@ -1,5 +1,5 @@
-namespace DeviceStateModel.Device;
+using DeviceStateModel.Common;
 
-public record Coords(decimal Latitude, decimal Longitude);
+namespace DeviceStateModel.Device;
 
 public record TemperatureTraced(string DeviceId, string LoggedAt, decimal Temperature, Coords Coords);

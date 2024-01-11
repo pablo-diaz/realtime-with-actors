@@ -25,7 +25,8 @@ public class DeviceManagerActor: IActor
     {
         (var devicePid, bool deviceWasJustCreated) = GetOrCreateDevice(context, message.DeviceId,
             () => new DeviceActor(withDeviceId: message.DeviceId, initialLoggedDate: message.LoggedAt,
-                                  initialTemperature: message.Temperature, initialCoords: message.Coords));
+                                  initialTemperature: message.Temperature, initialCoords: message.Coords,
+                                  watchingZoneManager: _watchingZoneManager));
 
         if(deviceWasJustCreated == false)
             context.Send(devicePid, message);
