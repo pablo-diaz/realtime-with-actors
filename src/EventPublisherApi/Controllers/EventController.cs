@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-using Controllers.DTOs;
 using Services;
 
 namespace Controllers;
@@ -19,9 +18,9 @@ public class EventController: ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> TrackNewDeviceEvent([FromBody] DeviceEvent @event)
+    public async Task<IActionResult> TrackNewDeviceEvent([FromBody] Controllers.DTOs.DeviceEvent @event)
     {
-        await _broker.SendMessage(new {
+        await _broker.SendMessage(new Messages.DeviceEvent {
             At = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             DeviceId = @event.DevId,
             Temperature = @event.Temp,

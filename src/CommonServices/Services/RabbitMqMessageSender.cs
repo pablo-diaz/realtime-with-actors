@@ -11,9 +11,9 @@ namespace Services
     // https://www.rabbitmq.com/dotnet-api-guide.html
     public sealed class RabbitMqMessageSender : IMessageSender, IDisposable
     {
+        private readonly RabbitMqConfiguration _config;
         private readonly IConnection _conn;
         private readonly IModel _channel;
-        private readonly RabbitMqConfiguration _config;
 
         public RabbitMqMessageSender(RabbitMqConfiguration config)
         {
@@ -25,9 +25,9 @@ namespace Services
 
             _channel = _conn.CreateModel();
 
-            _channel.ExchangeDeclare(config.Events.Exchange, ExchangeType.Direct);
-            _channel.QueueDeclare(config.Events.Queue, false, false, false, null);
-            _channel.QueueBind(config.Events.Queue, config.Events.Exchange, config.Events.RoutingKey, null);
+            _channel.ExchangeDeclare(exchange: config.Events.Exchange, type: ExchangeType.Direct);
+            _channel.QueueDeclare(queue: config.Events.Queue, durable: false, exclusive: false, autoDelete: false, arguments: null);
+            _channel.QueueBind(queue: config.Events.Queue, exchange: config.Events.Exchange, routingKey: config.Events.RoutingKey, arguments: null);
         }
 
         public void Dispose()
@@ -45,10 +45,10 @@ namespace Services
             props.ContentType = "application/json";
 
             lock(_channel) {
-                _channel.BasicPublish(_config.Events.Exchange, _config.Events.RoutingKey, props, System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message)));
+                _channel.BasicPublish(exchange: _config.Events.Exchange, routingKey: _config.Events.RoutingKey, basicProperties: props,
+                    body: System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message)));
             }
 
-            System.Console.WriteLine($"Mensaje enviado exitosamente a Rabbit MQ");
             return Task.CompletedTask;
         }
     }

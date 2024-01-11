@@ -7,6 +7,7 @@ namespace Services.Config
             public string Exchange { get; set; }
             public string Queue { get; set; }
             public string RoutingKey { get; set; }
+            public int CompetingConsumersCount { get; set; }
         }
 
         public string ConnectionString { get; set; }
