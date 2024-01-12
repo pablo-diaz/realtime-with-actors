@@ -1,7 +1,8 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 
-using DeviceStateModel.Common;
-using DeviceStateModel.WatchingZone;
+using Domain.Common;
 
 using Proto;
 
@@ -9,57 +10,81 @@ namespace DeviceStateModel.Device;
 
 public class DeviceActor: IActor
 {
-    private readonly string _deviceId;
-    private readonly string _initialLoggedDate;  // TODO: improve naming
-    private decimal _currentTemperature;
-    private Coords _currentCoords;
+    private readonly Domain.Device _currentState;
     private readonly PID _watchingZoneManager;
 
-    public DeviceActor(string withDeviceId, string initialLoggedDate, decimal initialTemperature, Coords initialCoords, PID watchingZoneManager)
+    public DeviceActor(string withDeviceId, string initialLoggedDate, decimal initialTemperature, (decimal latitude, decimal longitude) initialCoords, PID watchingZoneManager)
     {
-        this._deviceId = withDeviceId;
-        this._initialLoggedDate = initialLoggedDate;
-        this._currentTemperature = initialTemperature;
-        this._currentCoords = initialCoords;
+        var coordsResult = Domain.Coords.For(latitude: initialCoords.latitude, longitude: initialCoords.longitude);
+        if(coordsResult.IsFailure)
+            throw new ApplicationException($"Impossible to initialize Device Actor for DevId '{withDeviceId}'. Reason: {coordsResult.Error}");
+
+        var newDeviceResult = Domain.Device.Create(deviceId: withDeviceId, initialTemperature: initialTemperature, initialCoords: coordsResult.Value);
+        if(newDeviceResult.IsFailure)
+            throw new ApplicationException($"Impossible to initialize Device Actor for DevId '{withDeviceId}'. Reason: {newDeviceResult.Error}");
+
+        this._currentState = newDeviceResult.Value;
         this._watchingZoneManager = watchingZoneManager;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
-        TemperatureTraced temperatureMessage => Process(context, temperatureMessage),
+        TemperatureTraced temperatureMessage => Handle(context, temperatureMessage),
         _ => Task.CompletedTask
     };
 
-    private Task Process(IContext context, TemperatureTraced message)
+    private Task Handle(IContext context, TemperatureTraced message)
     {
-        ProcessTemperatureEvent(newTemperature: message.Temperature);
-        ProcessCoordinatesEvent(context, when: message.LoggedAt, newCoords: message.Coords);
+        HandleTemperatureEvent(newTemperature: message.Temperature);
+        HandleCoordinatesEvent(context, when: message.LoggedAt, newLocation: message.Coords);
+        PersistEvent(@event: message);
         return Task.CompletedTask;
     }
 
-    private void ProcessTemperatureEvent(decimal newTemperature)
+    private void HandleTemperatureEvent(decimal newTemperature)
     {
-        if(_currentTemperature == newTemperature)
-            return;
-
-        _currentTemperature = newTemperature;
-        Log($"Temperature has changed to {newTemperature}");
+        var result = _currentState.ChangeTemperature(newTemperature: newTemperature);
+        if(result.IsFailure)
+            throw new ApplicationException($"Impossible to handle change of temperature for DevId '{_currentState.Id}'. Reason: {result.Error}");
+        
+        ProcessAnyDomainEvents();
     }
 
-    private void ProcessCoordinatesEvent(IContext context, string when, Coords newCoords)
+    private void HandleCoordinatesEvent(IContext context, string when, (decimal latitude, decimal longitude) newLocation)
     {
-        if(_currentCoords == newCoords)
+        var newCoordsResult = Domain.Coords.For(latitude: newLocation.latitude, longitude: newLocation.longitude);
+        if(newCoordsResult.IsFailure)
+            throw new ApplicationException($"Impossible to handle change of location for DevId '{_currentState.Id}'. Reason: {newCoordsResult.Error}");
+
+        _currentState.ChangeLocation(newLocation: newCoordsResult.Value);
+        
+        ProcessAnyDomainEvents();
+    }
+
+    private void PersistEvent(TemperatureTraced @event)
+    {
+        // TODO
+    }
+
+    private void PersistEvent(IDomainEvent @event)
+    {
+        // TODO
+        Log($"Domain event '{@event.GetType()}' raised");
+    }
+
+    private void ProcessAnyDomainEvents()
+    {
+        if(_currentState.DomainEvents.Any() == false)
             return;
 
-        context.Send(_watchingZoneManager, new DeviceLocationChanged(deviceId: _deviceId, when: when,
-            fromCoords: _currentCoords, toCoords: newCoords));
+        var events = _currentState.DomainEvents.ToArray();
+        _currentState.ClearDomainEvents();
 
-        _currentCoords = newCoords;
-
-        Log($"Device location has changed to Lat: {newCoords.Latitude} - Lon: {newCoords.Longitude}");
+        foreach(var @event in events)
+            PersistEvent(@event);
     }
 
     private void Log(string message)
     {
-        System.Console.WriteLine($"[Device {_deviceId}]: {message}");
+        System.Console.WriteLine($"[Device {_currentState.Id}]: {message}");
     }
 }
