@@ -1,10 +1,8 @@
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-using Domain.Common;
-
 using Proto;
+using MediatR;
 
 namespace DeviceStateModel.Device;
 
@@ -12,19 +10,22 @@ public class DeviceActor: IActor
 {
     private readonly Domain.Device _currentState;
     private readonly PID _watchingZoneManager;
+    private readonly IMediator _eventHandler;
 
-    public DeviceActor(string withDeviceId, string initialLoggedDate, decimal initialTemperature, (decimal latitude, decimal longitude) initialCoords, PID watchingZoneManager)
+    public DeviceActor(string withDeviceId, string initialLoggedDate, decimal initialTemperature, (decimal latitude, decimal longitude) initialCoords,
+        PID watchingZoneManager, IMediator eventHandler)
     {
         var coordsResult = Domain.Coords.For(latitude: initialCoords.latitude, longitude: initialCoords.longitude);
         if(coordsResult.IsFailure)
-            throw new ApplicationException($"Impossible to initialize Device Actor for DevId '{withDeviceId}'. Reason: {coordsResult.Error}");
+            LetItCrash(scenario: "Creating device actor", withReason: $"Impossible to initialize Device Actor for DevId '{withDeviceId}', when creating Location coords. Reason: {coordsResult.Error}");
 
         var newDeviceResult = Domain.Device.Create(deviceId: withDeviceId, initialTemperature: initialTemperature, initialCoords: coordsResult.Value);
         if(newDeviceResult.IsFailure)
-            throw new ApplicationException($"Impossible to initialize Device Actor for DevId '{withDeviceId}'. Reason: {newDeviceResult.Error}");
+            LetItCrash(scenario: "Creating device actor", withReason: $"Impossible to initialize Device Actor for DevId '{withDeviceId}', when creating device. Reason: {newDeviceResult.Error}");
 
         this._currentState = newDeviceResult.Value;
         this._watchingZoneManager = watchingZoneManager;
+        this._eventHandler = eventHandler;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
@@ -44,7 +45,7 @@ public class DeviceActor: IActor
     {
         var result = _currentState.ChangeTemperature(newTemperature: newTemperature);
         if(result.IsFailure)
-            throw new ApplicationException($"Impossible to handle change of temperature for DevId '{_currentState.Id}'. Reason: {result.Error}");
+            LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to handle change of temperature for DevId '{_currentState.Id}'. Reason: {result.Error}");
         
         ProcessAnyDomainEvents();
     }
@@ -53,7 +54,7 @@ public class DeviceActor: IActor
     {
         var newCoordsResult = Domain.Coords.For(latitude: newLocation.latitude, longitude: newLocation.longitude);
         if(newCoordsResult.IsFailure)
-            throw new ApplicationException($"Impossible to handle change of location for DevId '{_currentState.Id}'. Reason: {newCoordsResult.Error}");
+            LetItCrash(scenario: "Processing location change event", withReason: $"Impossible to handle change of location for DevId '{_currentState.Id}'. Reason: {newCoordsResult.Error}");
 
         _currentState.ChangeLocation(newLocation: newCoordsResult.Value);
         
@@ -65,12 +66,6 @@ public class DeviceActor: IActor
         // TODO
     }
 
-    private void PersistEvent(IDomainEvent @event)
-    {
-        // TODO
-        Log($"Domain event '{@event.GetType()}' raised");
-    }
-
     private void ProcessAnyDomainEvents()
     {
         if(_currentState.DomainEvents.Any() == false)
@@ -80,7 +75,13 @@ public class DeviceActor: IActor
         _currentState.ClearDomainEvents();
 
         foreach(var @event in events)
-            PersistEvent(@event);
+            _eventHandler.Publish(@event);
+    }
+
+    private void LetItCrash(string scenario, string withReason)
+    {
+        Log("Exception occured !! Reason: " + withReason);
+        throw new DeviceStateModel.Exceptions.WhileHandlingMessageException(scenario: scenario, reason: withReason);
     }
 
     private void Log(string message)

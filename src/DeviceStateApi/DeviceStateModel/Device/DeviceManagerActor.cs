@@ -1,19 +1,22 @@
+using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 using Proto;
-using System;
+using MediatR;
 
 namespace DeviceStateModel.Device;
 
 public class DeviceManagerActor: IActor
 {
     private readonly PID _watchingZoneManager;
+    private readonly IMediator _eventHandler;
     private readonly Dictionary<string, PID> _devices = new();
 
-    public DeviceManagerActor(PID watchingZoneManager)
+    public DeviceManagerActor(PID watchingZoneManager, IMediator eventHandler)
     {
         this._watchingZoneManager = watchingZoneManager;
+        this._eventHandler = eventHandler;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
@@ -26,7 +29,7 @@ public class DeviceManagerActor: IActor
         (var devicePid, bool deviceWasJustCreated) = GetOrCreateDevice(context, message.DeviceId,
             () => new DeviceActor(withDeviceId: message.DeviceId, initialLoggedDate: message.LoggedAt,
                                   initialTemperature: message.Temperature, initialCoords: message.Coords,
-                                  watchingZoneManager: _watchingZoneManager));
+                                  watchingZoneManager: _watchingZoneManager, eventHandler: _eventHandler));
 
         if(deviceWasJustCreated == false)
             context.Send(devicePid, message);
