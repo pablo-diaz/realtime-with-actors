@@ -1,8 +1,12 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Domain.Common;
+
 using Proto;
 using MediatR;
+using Domain.Events;
 
 namespace DeviceStateModel.Device;
 
@@ -36,8 +40,11 @@ public class DeviceActor: IActor
     private Task Handle(IContext context, TemperatureTraced message)
     {
         HandleTemperatureEvent(newTemperature: message.Temperature);
-        HandleCoordinatesEvent(context, when: message.LoggedAt, newLocation: message.Coords);
+        HandleLocationEvent(context, when: message.LoggedAt, newLocation: message.Coords);
+
         PersistEvent(@event: message);
+        ProcessAnyDomainEvents(eventPublishedCallback: @event => NotifyWatchingZoneManagerForLocationChangeEvents(context, @event, when: message.LoggedAt));
+
         return Task.CompletedTask;
     }
 
@@ -46,19 +53,25 @@ public class DeviceActor: IActor
         var result = _currentState.ChangeTemperature(newTemperature: newTemperature);
         if(result.IsFailure)
             LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to handle change of temperature for DevId '{_currentState.Id}'. Reason: {result.Error}");
-        
-        ProcessAnyDomainEvents();
     }
 
-    private void HandleCoordinatesEvent(IContext context, string when, (decimal latitude, decimal longitude) newLocation)
+    private void HandleLocationEvent(IContext context, string when, (decimal latitude, decimal longitude) newLocation)
     {
         var newCoordsResult = Domain.Coords.For(latitude: newLocation.latitude, longitude: newLocation.longitude);
         if(newCoordsResult.IsFailure)
             LetItCrash(scenario: "Processing location change event", withReason: $"Impossible to handle change of location for DevId '{_currentState.Id}'. Reason: {newCoordsResult.Error}");
 
         _currentState.ChangeLocation(newLocation: newCoordsResult.Value);
-        
-        ProcessAnyDomainEvents();
+    }
+
+    private void NotifyWatchingZoneManagerForLocationChangeEvents(IContext context, IDomainEvent @event, string when)
+    {
+        if(@event is not DeviceLocationHasChanged)
+            return;
+
+        var locationInfo = (DeviceLocationHasChanged)@event;
+        context.Send(_watchingZoneManager, new DeviceStateModel.WatchingZone.DeviceLocationChanged(deviceId: _currentState.Id, when: when,
+            fromCoords: locationInfo.PreviousLocation, toCoords: locationInfo.NewLocation));
     }
 
     private void PersistEvent(TemperatureTraced @event)
@@ -66,7 +79,7 @@ public class DeviceActor: IActor
         // TODO
     }
 
-    private void ProcessAnyDomainEvents()
+    private void ProcessAnyDomainEvents(Action<IDomainEvent> eventPublishedCallback)
     {
         if(_currentState.DomainEvents.Any() == false)
             return;
@@ -75,7 +88,10 @@ public class DeviceActor: IActor
         _currentState.ClearDomainEvents();
 
         foreach(var @event in events)
+        {
             _eventHandler.Publish(@event);
+            eventPublishedCallback(@event);
+        }
     }
 
     private void LetItCrash(string scenario, string withReason)
