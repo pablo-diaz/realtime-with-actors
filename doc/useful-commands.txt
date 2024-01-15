@@ -14,6 +14,8 @@ docker container remove some-rabbit
 
 docker run -d --hostname my-rabbit --name pushpin -p 7999:7999 -p 5560-5563:5560-5563 -v $(pwd)/config/pushpin/routes:/etc/pushpin/routes fanout/pushpin
 
+docker run --hostname my-rabbit --name pushpin -p 7999:7999 -p 5560-5563:5560-5563 -v $(pwd)/config/pushpin/:/etc/pushpin/ fanout/pushpin
+
 docker exec -it pushpin /bin/bash
 
 docker container stop pushpin

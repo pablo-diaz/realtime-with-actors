@@ -34,7 +34,7 @@ public sealed class PushpinSseUserEventPublisher : IUserEventPublisher
     public Task PublishDeviceTemperatureHasDecreasedEvent(string forDeviceId, decimal previousTemperature, decimal newTemperature, (decimal latitude, decimal longitude) whileLocatedAt)
     {
         return PublishServerSentEvent(ServerSentEventPushpinObject.For(inChannel: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream,
-            eventName: "DeviceTemperatureHasIncreased", eventData: System.Text.Json.JsonSerializer.Serialize(new {
+            eventName: "DeviceTemperatureHasDecreased", eventData: System.Text.Json.JsonSerializer.Serialize(new {
                 DevId = forDeviceId,
                 PrevTemp = previousTemperature,
                 NewTemp = newTemperature,
@@ -48,7 +48,7 @@ public sealed class PushpinSseUserEventPublisher : IUserEventPublisher
     public Task PublishDeviceLocationHasChangedEvent(string forDeviceId, (decimal latitude, decimal longitude) previousLocation, (decimal latitude, decimal longitude) newLocation)
     {
         return PublishServerSentEvent(ServerSentEventPushpinObject.For(inChannel: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream,
-            eventName: "DeviceTemperatureHasIncreased", eventData: System.Text.Json.JsonSerializer.Serialize(new {
+            eventName: "DeviceLocationHasChanged", eventData: System.Text.Json.JsonSerializer.Serialize(new {
                 DeviceId = forDeviceId,
                 PrevLoc = new {
                     Lat = previousLocation.latitude,
@@ -63,7 +63,7 @@ public sealed class PushpinSseUserEventPublisher : IUserEventPublisher
 
     private Task PublishServerSentEvent(ServerSentEventPushpinObject @event)
     {
-        _configuration.SSE.ServiceBaseUrl
+        _configuration?.SSE?.ServiceBaseUrl
             .AppendPathSegment("publish")
             .PostJsonAsync(@event);
 
@@ -76,26 +76,26 @@ public sealed class ServerSentEventPushpinObject
     public class ServerSentEventInfo
     {
         [System.Text.Json.Serialization.JsonPropertyName("content")]
-        public string Content { get; set; }
+        public string? Content { get; set; }
     }
 
     public class ServerSentEventFormat
     {
         [System.Text.Json.Serialization.JsonPropertyName("http-stream")]
-        public ServerSentEventInfo Info { get; set; }
+        public ServerSentEventInfo? Info { get; set; }
     }
 
     public class ServerSentEventItem
     {
         [System.Text.Json.Serialization.JsonPropertyName("channel")]
-        public string Channel { get; set; }
+        public string? Channel { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("formats")]
-        public ServerSentEventFormat Formats { get; set; }
+        public ServerSentEventFormat? Formats { get; set; }
     }
 
     [System.Text.Json.Serialization.JsonPropertyName("items")]
-    public ServerSentEventItem[] Items { get; set; }
+    public ServerSentEventItem[]? Items { get; set; }
 
     public static ServerSentEventPushpinObject For(string inChannel, string eventName, string eventData) =>
         new ServerSentEventPushpinObject {

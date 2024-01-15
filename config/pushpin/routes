@@ -1,1 +1,1 @@
-* localhost:5198
+* host.docker.internal:5198,over_http
