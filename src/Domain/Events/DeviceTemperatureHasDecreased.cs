@@ -2,14 +2,14 @@ using Domain.Common;
 
 namespace Domain.Events
 {
-    public class DeviceTemperatureHasIncreased: IDomainEvent
+    public class DeviceTemperatureHasDecreased: IDomainEvent
     {
         public string DeviceId { get; }
         public Coords WhenDeviceWasLocatedAt { get; }
-        public decimal PreviousTemperature { get; }
-        public decimal NewTemperature { get; }
+        public Temperature PreviousTemperature { get; }
+        public Temperature NewTemperature { get; }
 
-        public DeviceTemperatureHasIncreased(string deviceId, Coords whenDeviceWasLocatedAt, decimal previousTemperature, decimal newTemperature)
+        public DeviceTemperatureHasDecreased(string deviceId, Coords whenDeviceWasLocatedAt, Temperature previousTemperature, Temperature newTemperature)
         {
             DeviceId = deviceId;
             WhenDeviceWasLocatedAt = whenDeviceWasLocatedAt;

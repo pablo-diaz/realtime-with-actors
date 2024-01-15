@@ -7,33 +7,25 @@ namespace Domain
 {
     public class Device : AggregateRoot<string>
     {
-        public decimal CurrentTemperature { get; private set; }
+        public Temperature CurrentTemperature { get; private set; }
         public Coords CurrentLocation { get; private set; }
 
-        private Device(string id, decimal initialTemperature, Coords initialCoords): base(id)
+        private Device(string id, Temperature initialTemperature, Coords initialCoords): base(id)
         {
             CurrentTemperature = initialTemperature;
             CurrentLocation = initialCoords;
         }
 
-        public static Result<Device> Create(string deviceId, decimal initialTemperature, Coords initialCoords)
+        public static Result<Device> Create(string deviceId, Temperature initialTemperature, Coords initialCoords)
         {
             if(string.IsNullOrEmpty(deviceId))
-                return Result.Failure<Device>("Please provide a valid Devide Id");
-
-            var validationResult = ValidateTemperature(initialTemperature);
-            if(validationResult.IsFailure)
-                return Result.Failure<Device>(validationResult.Error);
+                return Result.Failure<Device>("Please provide a valid Device Id");
 
             return new Device(id: deviceId, initialTemperature: initialTemperature, initialCoords: initialCoords);
         }
 
-        public Result ChangeTemperature(decimal newTemperature)
+        public Result ChangeTemperature(Temperature newTemperature)
         {
-            var validationResult = ValidateTemperature(newTemperature);
-            if(validationResult.IsFailure)
-                return Result.Failure(validationResult.Error);
-
             if(CurrentTemperature == newTemperature)
                 return Result.Success();
 
@@ -41,8 +33,7 @@ namespace Domain
             CurrentTemperature = newTemperature;
 
             if(newTemperature < previousTemperature)
-                RaiseDomainEvent(
-                    new DeviceTemperatureHasDecreased(deviceId: Id, whenDeviceWasLocatedAt: CurrentLocation,
+                RaiseDomainEvent(new DeviceTemperatureHasDecreased(deviceId: Id, whenDeviceWasLocatedAt: CurrentLocation,
                     previousTemperature: previousTemperature, newTemperature: newTemperature));
             else 
                 RaiseDomainEvent(new DeviceTemperatureHasIncreased(deviceId: Id, whenDeviceWasLocatedAt: CurrentLocation,
@@ -61,10 +52,5 @@ namespace Domain
 
             RaiseDomainEvent(new DeviceLocationHasChanged(deviceId: Id, previousLocation: previousLocation, newLocation: newLocation));
         }
-
-        private static Result ValidateTemperature(decimal value) =>
-            value < -100 || value > 100
-            ? Result.Failure($"Wrong temperature {value}")
-            : Result.Success();
     }
 }

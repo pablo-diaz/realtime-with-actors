@@ -3,10 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Domain.Common;
+using Domain.Events;
 
 using Proto;
 using MediatR;
-using Domain.Events;
 
 namespace DeviceStateModel.Device;
 
@@ -19,11 +19,15 @@ public class DeviceActor: IActor
     public DeviceActor(string withDeviceId, string initialLoggedDate, decimal initialTemperature, (decimal latitude, decimal longitude) initialCoords,
         PID watchingZoneManager, IMediator eventHandler)
     {
+        var initialTemperatureResult = Domain.Temperature.For(value: initialTemperature);
+        if(initialTemperatureResult.IsFailure)
+            LetItCrash(scenario: "Creating device actor", withReason: $"Impossible to initialize Device Actor for DevId '{withDeviceId}', when creating Temperature. Reason: {initialTemperatureResult.Error}");
+
         var coordsResult = Domain.Coords.For(latitude: initialCoords.latitude, longitude: initialCoords.longitude);
         if(coordsResult.IsFailure)
             LetItCrash(scenario: "Creating device actor", withReason: $"Impossible to initialize Device Actor for DevId '{withDeviceId}', when creating Location coords. Reason: {coordsResult.Error}");
 
-        var newDeviceResult = Domain.Device.Create(deviceId: withDeviceId, initialTemperature: initialTemperature, initialCoords: coordsResult.Value);
+        var newDeviceResult = Domain.Device.Create(deviceId: withDeviceId, initialTemperature: initialTemperatureResult.Value, initialCoords: coordsResult.Value);
         if(newDeviceResult.IsFailure)
             LetItCrash(scenario: "Creating device actor", withReason: $"Impossible to initialize Device Actor for DevId '{withDeviceId}', when creating device. Reason: {newDeviceResult.Error}");
 
@@ -50,7 +54,11 @@ public class DeviceActor: IActor
 
     private void HandleTemperatureEvent(decimal newTemperature)
     {
-        var result = _currentState.ChangeTemperature(newTemperature: newTemperature);
+        var newTemperatureResult = Domain.Temperature.For(value: newTemperature);
+        if(newTemperatureResult.IsFailure)
+            LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to create temperature for DevId '{_currentState.Id}'. Reason: {newTemperatureResult.Error}");
+
+        var result = _currentState.ChangeTemperature(newTemperature: newTemperatureResult.Value);
         if(result.IsFailure)
             LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to handle change of temperature for DevId '{_currentState.Id}'. Reason: {result.Error}");
     }
