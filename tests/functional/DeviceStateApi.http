@@ -1,6 +1,6 @@
 @DeviceStateApi_HostAddress = http://localhost:5198
 
-GET {{DeviceStateApi_HostAddress}}/weatherforecast/
+GET {{DeviceStateApi_HostAddress}}/UserSubscription/toGeneralDeviceEventStream/
 Accept: application/json
 
 ###

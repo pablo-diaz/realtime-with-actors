@@ -12,6 +12,9 @@ builder.Services.AddActorSystem();
 builder.Services.AddSingleton<Services.IMessageReceiver, Services.RabbitMqMessageReceiver>(sp =>
     new Services.RabbitMqMessageReceiver(builder.Configuration.GetSection("RabbitMqConfig").Get<Services.Config.RabbitMqConfiguration>()));
 
+builder.Services.AddSingleton<DeviceStateServices.IUserEventPublisher, Infrastructure.PushpinSseUserEventPublisher>(sp =>
+    new PushpinSseUserEventPublisher(config: builder.Configuration.GetSection("PushpinSetup").Get<Infrastructure.PushpinConfig>()!));
+
 builder.Services.AddHostedService<Jobs.DeviceEventConsumer>();
 
 var app = builder.Build();
