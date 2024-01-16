@@ -74,10 +74,9 @@ public class DeviceActor: IActor
 
     private void NotifyWatchingZoneManagerForLocationChangeEvents(IContext context, IDomainEvent @event, string when)
     {
-        if(@event is not DeviceLocationHasChanged)
+        if(@event is not DeviceLocationHasChanged locationInfo)
             return;
 
-        var locationInfo = (DeviceLocationHasChanged)@event;
         context.Send(_watchingZoneManager, new DeviceStateModel.WatchingZone.DeviceLocationChanged(deviceId: _currentState.Id, when: when,
             fromCoords: locationInfo.PreviousLocation, toCoords: locationInfo.NewLocation));
     }

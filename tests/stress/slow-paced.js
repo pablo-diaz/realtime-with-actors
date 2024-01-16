@@ -49,6 +49,12 @@ export const options = {
             startTime: '500s',
             vus: 5000,
             iterations: 1
+        },
+        tenThousandDevices: {
+            executor: 'per-vu-iterations',
+            startTime: '600s',
+            vus: 10000,
+            iterations: 1
         }
     }
 };
@@ -100,21 +106,22 @@ const sendDeviceState = deviceStateToSend => {
     http.post(`${serviceUrl}/event`, JSON.stringify(deviceStateToSend), params);
 }
 
+const shouldItDecrease = () => Math.round(Math.random() * 10) % 2 == 0;
+
 const startRandomTransitioningPhase = withDeviceState => {
     const cycles = Math.round(Math.random() * 100);
     for(let i = 1; i <= cycles; i++)
     {
-        const shouldItDecrease = Math.round(Math.random() * 10) % 2 == 0;
         const possibleTriggerToTake = possibleTriggers[Math.round(Math.random() * possibleTriggers.length)];
         if(possibleTriggerToTake === triggers.changeTemperature)
         {
-            withDeviceState.Temp += Math.random() * 2.0 * (shouldItDecrease ? -1 : 1);
+            withDeviceState.Temp += Math.random() * 2.0 * (shouldItDecrease() ? -1 : 1);
             sendDeviceState(withDeviceState);
         }
         else if(possibleTriggerToTake === triggers.changeLocation)
         {
-            withDeviceState.Lat += Math.random() * 1.5 * (shouldItDecrease ? -1 : 1);
-            withDeviceState.Lon += Math.random() * 1.5 * (shouldItDecrease ? -1 : 1);
+            withDeviceState.Lat += Math.random() * 1.5 * (shouldItDecrease() ? -1 : 1);
+            withDeviceState.Lon += Math.random() * 1.5 * (shouldItDecrease() ? -1 : 1);
             sendDeviceState(withDeviceState);
         }
         sleep(1);

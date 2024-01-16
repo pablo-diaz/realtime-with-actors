@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 namespace Controllers;
 
@@ -14,8 +15,8 @@ public class UserSubscriptionController: ControllerBase
         // https://pushpin.org/docs/usage/#server-sent-events
 
         Response.ContentType = "text/event-stream";  // Server-sent events
-        Response.Headers.Add(key: "Grip-Hold", value: "stream");
-        Response.Headers.Add(key: "Grip-Channel", value: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream);
+        Response.Headers.Append(key: "Grip-Hold", value: "stream");
+        Response.Headers.Append(key: "Grip-Channel", value: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream);
 
         return Task.FromResult<IActionResult>(Ok());
     }
