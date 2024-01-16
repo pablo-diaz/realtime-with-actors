@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 using Proto;
 using MediatR;
+using DeviceStateServices;
 
 namespace DeviceStateModel.Device;
 
@@ -11,12 +12,14 @@ public class DeviceManagerActor: IActor
 {
     private readonly PID _watchingZoneManager;
     private readonly IMediator _eventHandler;
+    private readonly IEventStore _eventStore;
     private readonly Dictionary<string, PID> _devices = new();
 
-    public DeviceManagerActor(PID watchingZoneManager, IMediator eventHandler)
+    public DeviceManagerActor(PID watchingZoneManager, IMediator eventHandler, DeviceStateServices.IEventStore eventStore)
     {
         this._watchingZoneManager = watchingZoneManager;
         this._eventHandler = eventHandler;
+        this._eventStore = eventStore;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
@@ -29,7 +32,7 @@ public class DeviceManagerActor: IActor
         (var devicePid, bool deviceWasJustCreated) = GetOrCreateDevice(context, message.DeviceId,
             () => new DeviceActor(withDeviceId: message.DeviceId, initialLoggedDate: message.LoggedAt,
                                   initialTemperature: message.Temperature, initialCoords: message.Coords,
-                                  watchingZoneManager: _watchingZoneManager, eventHandler: _eventHandler));
+                                  watchingZoneManager: _watchingZoneManager, eventHandler: _eventHandler, eventStore: _eventStore));
 
         if(deviceWasJustCreated == false)
             context.Send(devicePid, message);

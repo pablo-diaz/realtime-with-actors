@@ -7,6 +7,7 @@ using Domain.Events;
 
 using Proto;
 using MediatR;
+using DeviceStateServices;
 
 namespace DeviceStateModel.Device;
 
@@ -15,9 +16,10 @@ public class DeviceActor: IActor
     private readonly Domain.Device _currentState;
     private readonly PID _watchingZoneManager;
     private readonly IMediator _eventHandler;
+    private readonly IEventStore _eventStore;
 
     public DeviceActor(string withDeviceId, string initialLoggedDate, decimal initialTemperature, (decimal latitude, decimal longitude) initialCoords,
-        PID watchingZoneManager, IMediator eventHandler)
+        PID watchingZoneManager, IMediator eventHandler, DeviceStateServices.IEventStore eventStore)
     {
         var initialTemperatureResult = Domain.Temperature.For(value: initialTemperature);
         if(initialTemperatureResult.IsFailure)
@@ -34,6 +36,7 @@ public class DeviceActor: IActor
         this._currentState = newDeviceResult.Value;
         this._watchingZoneManager = watchingZoneManager;
         this._eventHandler = eventHandler;
+        this._eventStore = eventStore;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
@@ -83,8 +86,11 @@ public class DeviceActor: IActor
 
     private void PersistEvent(TemperatureTraced @event)
     {
-        // TODO
+        _eventStore.StoreTemperatureEvent(Map(@event));
     }
+
+    private static DeviceStateServices.TemperatureEvent Map(TemperatureTraced from) =>
+        new DeviceStateServices.TemperatureEvent(DeviceId: from.DeviceId, Temperature: from.Temperature, Location: from.Coords, LoggedAt: System.DateTimeOffset.UtcNow);
 
     private void ProcessAnyDomainEvents(Action<IDomainEvent> eventPublishedCallback)
     {

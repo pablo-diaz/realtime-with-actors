@@ -15,6 +15,9 @@ builder.Services.AddSingleton<Services.IMessageReceiver, Services.RabbitMqMessag
 builder.Services.AddSingleton<DeviceStateServices.IUserEventPublisher, Infrastructure.PushpinSseUserEventPublisher>(sp =>
     new PushpinSseUserEventPublisher(config: builder.Configuration.GetSection("PushpinSetup").Get<Infrastructure.PushpinConfig>()!));
 
+builder.Services.AddSingleton<DeviceStateServices.IEventStore, Infrastructure.InlfuxDbEventStore>(sp =>
+    new InlfuxDbEventStore(config: builder.Configuration.GetSection("InfluxDbSetup").Get<Infrastructure.InfluxDbConfig>()!));
+
 builder.Services.AddHostedService<Jobs.DeviceEventConsumer>();
 
 var app = builder.Build();
