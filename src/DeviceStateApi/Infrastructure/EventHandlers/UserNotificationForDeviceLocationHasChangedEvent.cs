@@ -21,7 +21,6 @@ public sealed class UserNotificationForDeviceLocationHasChangedEvent : INotifica
             previousLocation: (latitude: @event.PreviousLocation.Latitude, longitude: @event.PreviousLocation.Longitude),
             newLocation: (latitude: @event.NewLocation.Latitude, longitude: @event.NewLocation.Longitude));
 
-        System.Console.WriteLine($"[UserNotificationForDeviceLocationHasChangedEvent]: new event sent to user about DevId '{@event.DeviceId}'");
         return Task.CompletedTask;
     }
 }

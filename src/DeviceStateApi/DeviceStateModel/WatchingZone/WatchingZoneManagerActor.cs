@@ -21,7 +21,6 @@ public class WatchingZoneManagerActor : IActor
 
     private Task Handle(IContext context, DeviceLocationChanged message)
     {
-        System.Console.WriteLine($"[WatchingZoneManagerActor]: Device '{message.deviceId}' has changed its location");
         return Task.CompletedTask;
     }
 }

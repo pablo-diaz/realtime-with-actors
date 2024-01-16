@@ -14,22 +14,78 @@ export const options = {
             vus: 1,
             iterations: 1
         },
-        fewDevices: {
+        tenDevices: {
             executor: 'per-vu-iterations',
             startTime: '2s',
             vus: 10,
+            iterations: 1
+        },
+        fiftyDevices: {
+            executor: 'per-vu-iterations',
+            startTime: '100s',
+            vus: 50,
+            iterations: 1
+        },
+        twoHundredDevices: {
+            executor: 'per-vu-iterations',
+            startTime: '200s',
+            vus: 200,
+            iterations: 1
+        },
+        oneThousandDevices: {
+            executor: 'per-vu-iterations',
+            startTime: '300s',
+            vus: 1000,
+            iterations: 1
+        },
+        threeThousandDevices: {
+            executor: 'per-vu-iterations',
+            startTime: '400s',
+            vus: 3000,
+            iterations: 1
+        },
+        fiveThousandDevices: {
+            executor: 'per-vu-iterations',
+            startTime: '500s',
+            vus: 5000,
             iterations: 1
         }
     }
 };
 
+const triggers = { noAction: "NOOP", changeTemperature: "ChangeTemperature", changeLocation: "ChangeLocation" };
+
+const possibleTriggers = [
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.changeTemperature, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.changeTemperature, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.changeLocation, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction,
+    triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction
+];
+
 const serviceUrl = "http://localhost:5264";
 
 const buildInitialState = (deviceId, scenarioName) => {
-    const devId = `AL-${deviceId.toString().padStart(4, "0")}`;
-    console.log(`[${scenarioName} - ${devId}] Creating device`);
     return {
-        DevId: devId,
+        DevId: `DevFor_${scenarioName}-${deviceId.toString().padStart(10, "0")}`,
         Temp: 15.5,
         Lat: 13.5698,
         Lon: 35.6974
@@ -44,12 +100,23 @@ const sendDeviceState = deviceStateToSend => {
     http.post(`${serviceUrl}/event`, JSON.stringify(deviceStateToSend), params);
 }
 
-const remainTheSameForSomeCycles = (withDeviceState, scenarioName) => {
-    const cycles = Math.round(Math.random() * 10);
+const startRandomTransitioningPhase = withDeviceState => {
+    const cycles = Math.round(Math.random() * 100);
     for(let i = 1; i <= cycles; i++)
     {
-        console.log(`[${scenarioName} - ${withDeviceState.DevId}] Remaining the same for ${i}/${cycles} time`);
-        sendDeviceState(withDeviceState);
+        const shouldItDecrease = Math.round(Math.random() * 10) % 2 == 0;
+        const possibleTriggerToTake = possibleTriggers[Math.round(Math.random() * possibleTriggers.length)];
+        if(possibleTriggerToTake === triggers.changeTemperature)
+        {
+            withDeviceState.Temp += Math.random() * 2.0 * (shouldItDecrease ? -1 : 1);
+            sendDeviceState(withDeviceState);
+        }
+        else if(possibleTriggerToTake === triggers.changeLocation)
+        {
+            withDeviceState.Lat += Math.random() * 1.5 * (shouldItDecrease ? -1 : 1);
+            withDeviceState.Lon += Math.random() * 1.5 * (shouldItDecrease ? -1 : 1);
+            sendDeviceState(withDeviceState);
+        }
         sleep(1);
     }
 }
@@ -59,15 +126,15 @@ const runColdStartScenario = (deviceId, scenarioName) => {
     sendDeviceState(initialDeviceState);
 }
 
-const runFewDevicesScenario = (deviceId, scenarioName) => {
+const runOtherScenarios = (deviceId, scenarioName) => {
     const initialDeviceState = buildInitialState(deviceId, scenarioName);
     sendDeviceState(initialDeviceState);
-    remainTheSameForSomeCycles(initialDeviceState, scenarioName);
+    startRandomTransitioningPhase(initialDeviceState);
 }
 
 export default function () {
     if(scenario.name === 'coldStart')
         runColdStartScenario(vu.idInTest, scenario.name);
-    else if(scenario.name === 'fewDevices')
-        runFewDevicesScenario(vu.idInTest, scenario.name);
+    else
+        runOtherScenarios(vu.idInTest, `${scenario.name}_${(new Date()).toISOString()}`);
 }

@@ -20,7 +20,6 @@ public sealed class UserNotificationForDeviceTemperatureHasDecreasedEvent : INot
         _publisher.PublishDeviceTemperatureHasDecreasedEvent(forDeviceId: @event.DeviceId, previousTemperature: @event.PreviousTemperature.Value, newTemperature: @event.NewTemperature.Value,
             whileLocatedAt: (latitude: @event.WhenDeviceWasLocatedAt.Latitude, longitude: @event.WhenDeviceWasLocatedAt.Longitude));
 
-        System.Console.WriteLine($"[UserNotificationForDeviceTemperatureHasDecreasedEvent]: new event sent to user about DevId '{@event.DeviceId}'");
         return Task.CompletedTask;
     }
 }
