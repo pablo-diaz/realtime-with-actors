@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace DeviceStateServices;
 
-public interface IEventStore
+public interface IEventStore: IDisposable
 {
     Task StoreTemperatureEvent(TemperatureEvent @event);
 }

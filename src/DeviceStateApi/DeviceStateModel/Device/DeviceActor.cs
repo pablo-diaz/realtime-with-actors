@@ -86,7 +86,9 @@ public class DeviceActor: IActor
 
     private void PersistEvent(TemperatureTraced @event)
     {
+        //System.Console.WriteLine($"[Device Actor] Writing event for '{@event.DeviceId}' with Temp: {@event.Temperature}");
         _eventStore.StoreTemperatureEvent(Map(@event));
+        //System.Console.WriteLine($"[Device Actor] Event for '{@event.DeviceId}' persisted in event store");
     }
 
     private static DeviceStateServices.TemperatureEvent Map(TemperatureTraced from) =>

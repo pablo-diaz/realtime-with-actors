@@ -1,11 +1,11 @@
+using System;
+using Task = System.Threading.Tasks.Task;
+
 using DeviceStateServices;
 
-using System;
 using InfluxDB.Client;
 using InfluxDB.Client.Api.Domain;
 using InfluxDB.Client.Core;
-using InfluxDB.Client.Writes;
-using Task = System.Threading.Tasks.Task;
 
 namespace Infrastructure;
 
@@ -39,19 +39,26 @@ public sealed class InlfuxDbEventStore : IEventStore
             };
     }
 
-    private readonly InfluxDbConfig _configuration;
+    private readonly InfluxDbConfig? _configuration;
+    private readonly InfluxDBClient? _client;
+    private readonly WriteApiAsync? _asyncWritter;
 
     public InlfuxDbEventStore(InfluxDbConfig config)
     {
         this._configuration = config;
+        this._client = new InfluxDBClient(_configuration.ServiceUrl, _configuration?.ServiceToken);
+        this._asyncWritter = this._client.GetWriteApiAsync();
+    }
+
+    public void Dispose()
+    {
+        _client?.Dispose();
     }
 
     public Task StoreTemperatureEvent(TemperatureEvent @event)
     {
-        using var client = new InfluxDBClient(_configuration.ServiceUrl, _configuration?.ServiceToken);
-        using var writeApi = client.GetWriteApi();
-        writeApi.WriteMeasurement(InfluxDeviceEvent.From(@event), WritePrecision.Ns, _configuration?.Bucket, _configuration?.Organization);
-
-        return Task.CompletedTask;
+        //System.Console.WriteLine($"[Influx Db Impl] Writing event for '{@event.DeviceId}' with Temp: {@event.Temperature}");
+        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceEvent.From(@event), precision: WritePrecision.Ns,
+            bucket: _configuration?.Bucket, org: _configuration?.Organization)!;
     }
 }

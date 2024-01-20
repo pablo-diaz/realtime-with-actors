@@ -14,45 +14,51 @@ export const options = {
             vus: 1,
             iterations: 1
         },
+        oneDevice: {
+            executor: 'per-vu-iterations',
+            startTime: '1s',
+            vus: 1,
+            iterations: 1
+        },
         tenDevices: {
             executor: 'per-vu-iterations',
-            startTime: '2s',
+            startTime: '100s',
             vus: 10,
             iterations: 1
         },
         fiftyDevices: {
             executor: 'per-vu-iterations',
-            startTime: '100s',
+            startTime: '200s',
             vus: 50,
             iterations: 1
         },
         twoHundredDevices: {
             executor: 'per-vu-iterations',
-            startTime: '200s',
+            startTime: '300s',
             vus: 200,
             iterations: 1
         },
         oneThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '300s',
+            startTime: '400s',
             vus: 1000,
             iterations: 1
         },
         threeThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '400s',
+            startTime: '500s',
             vus: 3000,
             iterations: 1
         },
         fiveThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '500s',
+            startTime: '600s',
             vus: 5000,
             iterations: 1
         },
         tenThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '600s',
+            startTime: '700s',
             vus: 10000,
             iterations: 1
         }
@@ -109,20 +115,24 @@ const sendDeviceState = deviceStateToSend => {
 const shouldItDecrease = () => Math.round(Math.random() * 10) % 2 == 0;
 
 const startRandomTransitioningPhase = withDeviceState => {
-    const cycles = Math.round(Math.random() * 100);
-    for(let i = 1; i <= cycles; i++)
-    {
+    const cycles = 50 + Math.round(Math.random() * 50);
+    for(let i = 1; i <= cycles; i++) {
         const possibleTriggerToTake = possibleTriggers[Math.round(Math.random() * possibleTriggers.length)];
-        if(possibleTriggerToTake === triggers.changeTemperature)
-        {
+        //console.log(`[${withDeviceState.DevId}] Cycle ${i}/${cycles} - Action: ${possibleTriggerToTake}`);
+        if(possibleTriggerToTake === triggers.changeTemperature) {
             withDeviceState.Temp += Math.random() * 2.0 * (shouldItDecrease() ? -1 : 1);
             sendDeviceState(withDeviceState);
+            //console.log(`[${withDeviceState.DevId}] Cycle ${i}/${cycles} - NewTemp event sent: ${withDeviceState.Temp}`);
         }
-        else if(possibleTriggerToTake === triggers.changeLocation)
-        {
+        else if(possibleTriggerToTake === triggers.changeLocation) {
             withDeviceState.Lat += Math.random() * 1.5 * (shouldItDecrease() ? -1 : 1);
             withDeviceState.Lon += Math.random() * 1.5 * (shouldItDecrease() ? -1 : 1);
             sendDeviceState(withDeviceState);
+            //console.log(`[${withDeviceState.DevId}] Cycle ${i}/${cycles} - NewLocation event sent`);
+        }
+        else if(possibleTriggerToTake === triggers.noAction) {
+            sendDeviceState(withDeviceState);
+            //console.log(`[${withDeviceState.DevId}] Cycle ${i}/${cycles} - No Action was taken`);
         }
         sleep(1);
     }

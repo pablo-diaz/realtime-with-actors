@@ -28,7 +28,7 @@ docker container remove pushpin
 
 # https://hub.docker.com/_/influxdb
 
-docker run -d --name myinfluxdb -v $(pwd)/volumes/myInfluxVolume:/var/lib/influxdb2 -v -p 8086:8086 influxdb:2.7.4
+docker run -d --name myinfluxdb -v $(pwd)/volumes/myInfluxVolume:/var/lib/influxdb2 -p 8086:8086 influxdb:2.7.4
 
 docker run -d --name myinfluxdb -v $(pwd)/volumes/myInfluxVolume:/var/lib/influxdb2 -v $PWD/config/influx/config.yml:/etc/influxdb2/config.yml -p 8086:8086 influxdb:2.7.4
 
