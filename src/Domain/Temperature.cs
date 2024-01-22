@@ -19,8 +19,11 @@ namespace Domain
             if(value < -100 || value > 100)
                 return Result.Failure<Temperature>($"Wrong temperature {value}");
 
-            return new Temperature(value);
+            return new Temperature(value: value);
         }
+
+        internal bool IsSimilar(Temperature to, decimal belowSimilarityThreshold) =>
+            Math.Abs(Value - to.Value) <= belowSimilarityThreshold;
 
         public static bool operator < (Temperature x, Temperature y) => x.Value < y.Value;
 

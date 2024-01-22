@@ -61,7 +61,7 @@ public class DeviceActor: IActor
         if(newTemperatureResult.IsFailure)
             LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to create temperature for DevId '{_currentState.Id}'. Reason: {newTemperatureResult.Error}");
 
-        var result = _currentState.ChangeTemperature(newTemperature: newTemperatureResult.Value);
+        var result = _currentState.ChangeTemperature(newTemperature: newTemperatureResult.Value, withSimilarityThreshold: 2.0M); //TODO: take SimilarityThreshold from appsettings.json
         if(result.IsFailure)
             LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to handle change of temperature for DevId '{_currentState.Id}'. Reason: {result.Error}");
     }

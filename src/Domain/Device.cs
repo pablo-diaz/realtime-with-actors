@@ -8,11 +8,13 @@ namespace Domain
     public class Device : AggregateRoot<string>
     {
         public Temperature CurrentTemperature { get; private set; }
+        private Temperature _mostRecentTemperatureNotifiedFor;
         public Coords CurrentLocation { get; private set; }
 
         private Device(string id, Temperature initialTemperature, Coords initialCoords): base(id)
         {
             CurrentTemperature = initialTemperature;
+            _mostRecentTemperatureNotifiedFor = initialTemperature;
             CurrentLocation = initialCoords;
         }
 
@@ -24,20 +26,25 @@ namespace Domain
             return new Device(id: deviceId, initialTemperature: initialTemperature, initialCoords: initialCoords);
         }
 
-        public Result ChangeTemperature(Temperature newTemperature)
+        public Result ChangeTemperature(Temperature newTemperature, decimal withSimilarityThreshold)
         {
             if(CurrentTemperature == newTemperature)
                 return Result.Success();
 
-            var previousTemperature = CurrentTemperature;
+            var previousMostRecentTemperatureNotifiedFor = _mostRecentTemperatureNotifiedFor;
             CurrentTemperature = newTemperature;
 
-            if(newTemperature < previousTemperature)
+            if(newTemperature.IsSimilar(to: _mostRecentTemperatureNotifiedFor, belowSimilarityThreshold: withSimilarityThreshold))
+                return Result.Success();
+
+            _mostRecentTemperatureNotifiedFor = newTemperature;
+
+            if(newTemperature < previousMostRecentTemperatureNotifiedFor)
                 RaiseDomainEvent(new DeviceTemperatureHasDecreased(deviceId: Id, whenDeviceWasLocatedAt: CurrentLocation,
-                    previousTemperature: previousTemperature, newTemperature: newTemperature));
+                    previousTemperature: previousMostRecentTemperatureNotifiedFor, newTemperature: newTemperature));
             else 
                 RaiseDomainEvent(new DeviceTemperatureHasIncreased(deviceId: Id, whenDeviceWasLocatedAt: CurrentLocation,
-                    previousTemperature: previousTemperature, newTemperature: newTemperature));
+                    previousTemperature: previousMostRecentTemperatureNotifiedFor, newTemperature: newTemperature));
             
             return Result.Success();
         }
