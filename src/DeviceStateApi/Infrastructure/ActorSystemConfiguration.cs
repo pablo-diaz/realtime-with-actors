@@ -12,7 +12,7 @@ namespace Infrastructure;
 
 public static class ActorSystemConfigurationExtensions
 {
-    public static void AddActorSystem(this IServiceCollection serviceCollection)
+    public static void AddActorSystem(this IServiceCollection serviceCollection, DeviceStateModel.Config.DeviceMonitoringSetup withSetup)
     {
         serviceCollection.AddSingleton(provider => {
             var actorSystem = new ActorSystem(ActorSystemConfig.Setup())
@@ -23,7 +23,8 @@ public static class ActorSystemConfigurationExtensions
 
             var watchingZoneManagerProps = Props.FromProducer(() => new WatchingZoneManagerActor(eventHandler: eventHandler));
             var deviceManagerProps = Props.FromProducer(() => new DeviceManagerActor(
-                watchingZoneManager: actorSystem.Root.Spawn(watchingZoneManagerProps), eventHandler: eventHandler, eventStore: eventStore));
+                watchingZoneManager: actorSystem.Root.Spawn(watchingZoneManagerProps), eventHandler: eventHandler,
+                eventStore: eventStore, withSetup: withSetup));
 
             return new ActorSystemConfiguration(withActorSystem: actorSystem, withDeviceManagerActor: actorSystem.Root.Spawn(deviceManagerProps));
         });

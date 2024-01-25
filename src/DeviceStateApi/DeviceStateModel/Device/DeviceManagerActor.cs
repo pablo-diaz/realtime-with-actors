@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Proto;
 using MediatR;
 using DeviceStateServices;
+using DeviceStateModel.Config;
 
 namespace DeviceStateModel.Device;
 
@@ -13,13 +14,16 @@ public class DeviceManagerActor: IActor
     private readonly PID _watchingZoneManager;
     private readonly IMediator _eventHandler;
     private readonly IEventStore _eventStore;
+    private readonly DeviceMonitoringSetup _withSetup;
     private readonly Dictionary<string, PID> _devices = new();
 
-    public DeviceManagerActor(PID watchingZoneManager, IMediator eventHandler, DeviceStateServices.IEventStore eventStore)
+    public DeviceManagerActor(PID watchingZoneManager, IMediator eventHandler, DeviceStateServices.IEventStore eventStore,
+        DeviceStateModel.Config.DeviceMonitoringSetup withSetup)
     {
         this._watchingZoneManager = watchingZoneManager;
         this._eventHandler = eventHandler;
         this._eventStore = eventStore;
+        this._withSetup = withSetup;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
@@ -32,7 +36,8 @@ public class DeviceManagerActor: IActor
         (var devicePid, bool deviceWasJustCreated) = GetOrCreateDevice(context, message.DeviceId,
             () => new DeviceActor(withDeviceId: message.DeviceId, initialLoggedDate: message.LoggedAt,
                                   initialTemperature: message.Temperature, initialCoords: message.Coords,
-                                  watchingZoneManager: _watchingZoneManager, eventHandler: _eventHandler, eventStore: _eventStore));
+                                  watchingZoneManager: _watchingZoneManager, eventHandler: _eventHandler,
+                                  eventStore: _eventStore, withSetup: _withSetup));
 
         if(deviceWasJustCreated == false)
             context.Send(devicePid, message);

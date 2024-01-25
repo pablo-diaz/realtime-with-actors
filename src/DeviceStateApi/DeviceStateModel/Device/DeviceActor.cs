@@ -8,6 +8,7 @@ using Domain.Events;
 using Proto;
 using MediatR;
 using DeviceStateServices;
+using DeviceStateModel.Config;
 
 namespace DeviceStateModel.Device;
 
@@ -17,9 +18,10 @@ public class DeviceActor: IActor
     private readonly PID _watchingZoneManager;
     private readonly IMediator _eventHandler;
     private readonly IEventStore _eventStore;
+    private readonly DeviceMonitoringSetup _withSetup;
 
     public DeviceActor(string withDeviceId, string initialLoggedDate, decimal initialTemperature, (decimal latitude, decimal longitude) initialCoords,
-        PID watchingZoneManager, IMediator eventHandler, DeviceStateServices.IEventStore eventStore)
+        PID watchingZoneManager, IMediator eventHandler, DeviceStateServices.IEventStore eventStore, DeviceStateModel.Config.DeviceMonitoringSetup withSetup)
     {
         var initialTemperatureResult = Domain.Temperature.For(value: initialTemperature);
         if(initialTemperatureResult.IsFailure)
@@ -37,6 +39,7 @@ public class DeviceActor: IActor
         this._watchingZoneManager = watchingZoneManager;
         this._eventHandler = eventHandler;
         this._eventStore = eventStore;
+        this._withSetup = withSetup;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
@@ -49,7 +52,7 @@ public class DeviceActor: IActor
         HandleTemperatureEvent(newTemperature: message.Temperature);
         HandleLocationEvent(context, when: message.LoggedAt, newLocation: message.Coords);
 
-        PersistEvent(@event: message);
+        PersistMetric(@event: message);
         ProcessAnyDomainEvents(eventPublishedCallback: @event => NotifyWatchingZoneManagerForLocationChangeEvents(context, @event, when: message.LoggedAt));
 
         return Task.CompletedTask;
@@ -61,7 +64,7 @@ public class DeviceActor: IActor
         if(newTemperatureResult.IsFailure)
             LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to create temperature for DevId '{_currentState.Id}'. Reason: {newTemperatureResult.Error}");
 
-        var result = _currentState.ChangeTemperature(newTemperature: newTemperatureResult.Value, withSimilarityThreshold: 2.0M); //TODO: take SimilarityThreshold from appsettings.json
+        var result = _currentState.ChangeTemperature(newTemperature: newTemperatureResult.Value, withSimilarityThreshold: _withSetup.TemperatureSimilarityThreshold);
         if(result.IsFailure)
             LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to handle change of temperature for DevId '{_currentState.Id}'. Reason: {result.Error}");
     }
@@ -84,15 +87,13 @@ public class DeviceActor: IActor
             fromCoords: locationInfo.PreviousLocation, toCoords: locationInfo.NewLocation));
     }
 
-    private void PersistEvent(TemperatureTraced @event)
+    private void PersistMetric(TemperatureTraced @event)
     {
-        //System.Console.WriteLine($"[Device Actor] Writing event for '{@event.DeviceId}' with Temp: {@event.Temperature}");
-        _eventStore.StoreTemperatureEvent(Map(@event));
-        //System.Console.WriteLine($"[Device Actor] Event for '{@event.DeviceId}' persisted in event store");
+        _eventStore.StoreTemperatureMetric(Map(@event));
     }
 
-    private static DeviceStateServices.TemperatureEvent Map(TemperatureTraced from) =>
-        new DeviceStateServices.TemperatureEvent(DeviceId: from.DeviceId, Temperature: from.Temperature, Location: from.Coords, LoggedAt: System.DateTimeOffset.UtcNow);
+    private static DeviceStateServices.TemperatureMetric Map(TemperatureTraced from) =>
+        new DeviceStateServices.TemperatureMetric(DeviceId: from.DeviceId, Temperature: from.Temperature, Location: from.Coords, LoggedAt: System.DateTimeOffset.UtcNow);
 
     private void ProcessAnyDomainEvents(Action<IDomainEvent> eventPublishedCallback)
     {

@@ -7,7 +7,8 @@ using Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
-builder.Services.AddActorSystem();
+builder.Services.AddActorSystem(
+    withSetup: builder.Configuration.GetSection("DeviceMonitoringSetup").Get<DeviceStateModel.Config.DeviceMonitoringSetup>()!);
 
 builder.Services.AddSingleton<Services.IMessageReceiver, Services.RabbitMqMessageReceiver>(sp =>
     new Services.RabbitMqMessageReceiver(builder.Configuration.GetSection("RabbitMqConfig").Get<Services.Config.RabbitMqConfiguration>()));
