@@ -73,7 +73,7 @@ public class DeviceActor: IActor
         if(newCoordsResult.IsFailure)
             LetItCrash(scenario: "Processing location change event", withReason: $"Impossible to handle change of location for DevId '{_currentState.Id}'. Reason: {newCoordsResult.Error}");
 
-        _currentState.ChangeLocation(newLocation: newCoordsResult.Value, withAtLeastDistanceInKm: 2.0M); // TODO: get this distiance in KMs from appsettings.json
+        _currentState.ChangeLocation(newLocation: newCoordsResult.Value, withAtLeastDistanceInKm: _withSetup.MinMovedToleratedDistanceInKms);
     }
 
     private void NotifyWatchingZoneManagerForLocationChangeEvents(IContext context, IDomainEvent @event, string when)

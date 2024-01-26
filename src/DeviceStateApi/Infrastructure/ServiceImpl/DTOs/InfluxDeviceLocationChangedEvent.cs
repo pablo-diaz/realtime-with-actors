@@ -24,6 +24,9 @@ internal class InfluxDeviceLocationChangedEvent
     [Column("new-longitude")]
     public decimal? NewLongitude { get; set; }
 
+    [Column("distance-in-kms")]
+    public decimal? DistanceInKms { get; set; }
+
     [Column(IsTimestamp = true)]
     public DateTimeOffset LoggedAt { get; set; }
 
@@ -36,6 +39,7 @@ internal class InfluxDeviceLocationChangedEvent
             PreviousLongitude = from.PreviousLocation.Longitude,
             NewLatitude = from.NewLocation.Latitude,
             NewLongitude = from.NewLocation.Longitude,
+            DistanceInKms = from.distanceInKms,
             LoggedAt = from.LoggedAt
         };
 }
