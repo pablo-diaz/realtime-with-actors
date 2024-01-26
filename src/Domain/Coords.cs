@@ -18,13 +18,28 @@ namespace Domain
 
         public static Result<Coords> For(decimal latitude, decimal longitude)
         {
-            if(latitude <= 0)
-                return Result.Failure<Coords>("Wrong latitude. Please specify a valid value");
+            if(latitude < -90 || latitude > 90)
+                return Result.Failure<Coords>($"Wrong latitude value '{latitude}'. Please specify a valid value");
 
-            if(longitude <= 0)
-                return Result.Failure<Coords>("Wrong longitude. Please specify a valid value");
+            if(longitude < -180 || longitude > 180)
+                return Result.Failure<Coords>($"Wrong longitude value '{longitude}'. Please specify a valid value");
 
             return new Coords(latitude: latitude, longitude: longitude);
+        }
+
+        public decimal GetDistanceInKm(Coords to)
+        {
+            // Haversine impl
+
+            decimal theta = this.Longitude - to.Longitude;
+
+            double distance = 60 * 1.1515 * (180/Math.PI) * Math.Acos(
+                Math.Sin((double)this.Latitude * (Math.PI/180)) * Math.Sin((double)to.Latitude * (Math.PI/180)) + 
+                Math.Cos((double)this.Latitude * (Math.PI/180)) * Math.Cos((double)to.Latitude * (Math.PI/180)) *
+                Math.Cos((double)theta * (Math.PI/180))
+            );
+
+            return (decimal) Math.Round(distance * 1.609344, 2);
         }
 
         protected override IEnumerable<IComparable> GetEqualityComponents()

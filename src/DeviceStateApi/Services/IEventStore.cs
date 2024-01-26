@@ -14,4 +14,5 @@ public record TemperatureMetric(string DeviceId, DateTimeOffset LoggedAt, decima
 
 public record TemperatureChangeEvent(string DeviceId, DateTimeOffset LoggedAt, decimal PreviousTemperature, decimal NewTemperature, bool IsTemperatureIncrease, (decimal Latitude, decimal Longitude) Location);
 
+// TODO: Add distance as a paratemer to LocationChangeEvent
 public record LocationChangeEvent(string DeviceId, DateTimeOffset LoggedAt, (decimal Latitude, decimal Longitude) PreviousLocation, (decimal Latitude, decimal Longitude) NewLocation);

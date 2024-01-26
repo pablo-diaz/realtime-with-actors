@@ -9,13 +9,17 @@ namespace Domain
     {
         public Temperature CurrentTemperature { get; private set; }
         private Temperature _mostRecentTemperatureNotifiedFor;
+
         public Coords CurrentLocation { get; private set; }
+        private Coords _mostRecentLocationNotifiedFor;
 
         private Device(string id, Temperature initialTemperature, Coords initialCoords): base(id)
         {
             CurrentTemperature = initialTemperature;
             _mostRecentTemperatureNotifiedFor = initialTemperature;
+
             CurrentLocation = initialCoords;
+            _mostRecentLocationNotifiedFor = initialCoords;
         }
 
         public static Result<Device> Create(string deviceId, Temperature initialTemperature, Coords initialCoords)
@@ -26,16 +30,16 @@ namespace Domain
             return new Device(id: deviceId, initialTemperature: initialTemperature, initialCoords: initialCoords);
         }
 
-        public Result ChangeTemperature(Temperature newTemperature, decimal withSimilarityThreshold)
+        public void ChangeTemperature(Temperature newTemperature, decimal withSimilarityThreshold)
         {
             if(CurrentTemperature == newTemperature)
-                return Result.Success();
+                return;
 
             var previousMostRecentTemperatureNotifiedFor = _mostRecentTemperatureNotifiedFor;
             CurrentTemperature = newTemperature;
 
             if(newTemperature.IsSimilar(to: _mostRecentTemperatureNotifiedFor, belowSimilarityThreshold: withSimilarityThreshold))
-                return Result.Success();
+                return;
 
             _mostRecentTemperatureNotifiedFor = newTemperature;
 
@@ -46,18 +50,23 @@ namespace Domain
                 RaiseDomainEvent(new DeviceTemperatureHasIncreased(deviceId: Id, whenDeviceWasLocatedAt: CurrentLocation,
                     previousTemperature: previousMostRecentTemperatureNotifiedFor, newTemperature: newTemperature));
             
-            return Result.Success();
+            return;
         }
 
-        public void ChangeLocation(Coords newLocation)
+        public void ChangeLocation(Coords newLocation, decimal withAtLeastDistanceInKm)
         {
             if(CurrentLocation == newLocation)
                 return;
 
-            var previousLocation = CurrentLocation;
+            var previousMostRecentLocationNotifiedFor = _mostRecentLocationNotifiedFor;
             CurrentLocation = newLocation;
 
-            RaiseDomainEvent(new DeviceLocationHasChanged(deviceId: Id, previousLocation: previousLocation, newLocation: newLocation));
+            if(newLocation.GetDistanceInKm(to: _mostRecentLocationNotifiedFor) < withAtLeastDistanceInKm)
+                return;
+
+            _mostRecentLocationNotifiedFor = newLocation;
+
+            RaiseDomainEvent(new DeviceLocationHasChanged(deviceId: Id, previousLocation: previousMostRecentLocationNotifiedFor, newLocation: newLocation));
         }
     }
 }

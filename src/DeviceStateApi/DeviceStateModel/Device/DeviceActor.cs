@@ -64,9 +64,7 @@ public class DeviceActor: IActor
         if(newTemperatureResult.IsFailure)
             LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to create temperature for DevId '{_currentState.Id}'. Reason: {newTemperatureResult.Error}");
 
-        var result = _currentState.ChangeTemperature(newTemperature: newTemperatureResult.Value, withSimilarityThreshold: _withSetup.TemperatureSimilarityThreshold);
-        if(result.IsFailure)
-            LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to handle change of temperature for DevId '{_currentState.Id}'. Reason: {result.Error}");
+        _currentState.ChangeTemperature(newTemperature: newTemperatureResult.Value, withSimilarityThreshold: _withSetup.TemperatureSimilarityThreshold);
     }
 
     private void HandleLocationEvent(IContext context, string when, (decimal latitude, decimal longitude) newLocation)
@@ -75,7 +73,7 @@ public class DeviceActor: IActor
         if(newCoordsResult.IsFailure)
             LetItCrash(scenario: "Processing location change event", withReason: $"Impossible to handle change of location for DevId '{_currentState.Id}'. Reason: {newCoordsResult.Error}");
 
-        _currentState.ChangeLocation(newLocation: newCoordsResult.Value);
+        _currentState.ChangeLocation(newLocation: newCoordsResult.Value, withAtLeastDistanceInKm: 2.0M); // TODO: get this distiance in KMs from appsettings.json
     }
 
     private void NotifyWatchingZoneManagerForLocationChangeEvents(IContext context, IDomainEvent @event, string when)
