@@ -118,21 +118,17 @@ const startRandomTransitioningPhase = withDeviceState => {
     const cycles = 50 + Math.round(Math.random() * 50);
     for(let i = 1; i <= cycles; i++) {
         const possibleTriggerToTake = possibleTriggers[Math.round(Math.random() * possibleTriggers.length)];
-        //console.log(`[${withDeviceState.DevId}] Cycle ${i}/${cycles} - Action: ${possibleTriggerToTake}`);
         if(possibleTriggerToTake === triggers.changeTemperature) {
             withDeviceState.Temp += Math.random() * 2.0 * (shouldItDecrease() ? -1 : 1);
             sendDeviceState(withDeviceState);
-            //console.log(`[${withDeviceState.DevId}] Cycle ${i}/${cycles} - NewTemp event sent: ${withDeviceState.Temp}`);
         }
         else if(possibleTriggerToTake === triggers.changeLocation) {
             withDeviceState.Lat += Math.random() * 1.5 * (shouldItDecrease() ? -1 : 1);
             withDeviceState.Lon += Math.random() * 1.5 * (shouldItDecrease() ? -1 : 1);
             sendDeviceState(withDeviceState);
-            //console.log(`[${withDeviceState.DevId}] Cycle ${i}/${cycles} - NewLocation event sent`);
         }
         else if(possibleTriggerToTake === triggers.noAction) {
             sendDeviceState(withDeviceState);
-            //console.log(`[${withDeviceState.DevId}] Cycle ${i}/${cycles} - No Action was taken`);
         }
         sleep(1);
     }
@@ -153,5 +149,5 @@ export default function () {
     if(scenario.name === 'coldStart')
         runColdStartScenario(vu.idInTest, scenario.name);
     else
-        runOtherScenarios(vu.idInTest, `${scenario.name}_${(new Date()).toISOString()}`);
+        runOtherScenarios(vu.idInTest, `${scenario.name}_${new Date(scenario.startTime).toISOString()}`);
 }
