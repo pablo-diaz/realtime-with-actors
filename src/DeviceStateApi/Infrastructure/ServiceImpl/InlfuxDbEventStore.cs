@@ -33,6 +33,12 @@ public sealed class InlfuxDbEventStore : IEventStore
             bucket: _configuration?.Bucket, org: _configuration?.Organization)!;
     }
 
+    public Task StoreDeviceCreatedEvent(DeviceCreatedEvent @event)
+    {
+        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceCreatedEvent.From(@event), precision: WritePrecision.Ns,
+            bucket: _configuration?.Bucket, org: _configuration?.Organization)!;
+    }
+
     public Task StoreTemperatureChangeEvent(TemperatureChangeEvent @event)
     {
         return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceTemperatureChangedEvent.From(@event), precision: WritePrecision.Ns,

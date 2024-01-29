@@ -20,6 +20,8 @@ namespace Domain
 
             CurrentLocation = initialCoords;
             _mostRecentLocationNotifiedFor = initialCoords;
+
+            RaiseDomainEvent(new DeviceHasBeenCreated(deviceId: id, withTemperature: CurrentTemperature, atLocation: CurrentLocation));
         }
 
         public static Result<Device> Create(string deviceId, Temperature initialTemperature, Coords initialCoords)

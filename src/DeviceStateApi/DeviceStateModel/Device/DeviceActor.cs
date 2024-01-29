@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 using Domain.Common;
 using Domain.Events;
 
-using Proto;
-using MediatR;
 using DeviceStateServices;
 using DeviceStateModel.Config;
+
+using Proto;
+using MediatR;
 
 namespace DeviceStateModel.Device;
 
@@ -43,9 +44,16 @@ public class DeviceActor: IActor
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
+        Started startMessage => Handle(context, startMessage),
         TemperatureTraced temperatureMessage => Handle(context, temperatureMessage),
         _ => Task.CompletedTask
     };
+
+    private Task Handle(IContext context, Started message)
+    {
+        ProcessAnyDomainEvents(eventPublishedCallback: _ => { });
+        return Task.CompletedTask;
+    }
 
     private Task Handle(IContext context, TemperatureTraced message)
     {

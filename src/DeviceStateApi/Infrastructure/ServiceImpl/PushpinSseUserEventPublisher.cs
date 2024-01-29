@@ -17,6 +17,19 @@ public sealed class PushpinSseUserEventPublisher : IUserEventPublisher
         this._configuration = config;
     }
 
+    public Task PublishDeviceHasBeenCreatedEvent(string forDeviceId, decimal withTemperature, (decimal latitude, decimal longitude) atLocation)
+    {
+        return PublishServerSentEvent(ServerSentEventPushpinObject.For(inChannel: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream,
+            eventName: "DeviceHasBeenCreated", eventData: System.Text.Json.JsonSerializer.Serialize(new {
+                DevId = forDeviceId,
+                Temp = withTemperature,
+                AtLoc = new {
+                    Lat = atLocation.latitude,
+                    Lon = atLocation.longitude
+                }
+            })));
+    }
+
     public Task PublishDeviceTemperatureHasIncreasedEvent(string forDeviceId, decimal previousTemperature, decimal newTemperature, (decimal latitude, decimal longitude) whileLocatedAt)
     {
         return PublishServerSentEvent(ServerSentEventPushpinObject.For(inChannel: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream,
