@@ -1,6 +1,8 @@
 # https://hub.docker.com/_/rabbitmq
 
-docker run -d --hostname my-rabbit --name some-rabbit -p 8080:15672 -p 5672:5672 rabbitmq
+docker pull rabbitmq:3-management-alpine
+
+docker run -d --hostname my-rabbit --name some-rabbit -p 8080:15672 -p 5672:5672 rabbitmq:3-management-alpine
 
 docker exec -it some-rabbit /bin/bash
 
@@ -32,10 +34,33 @@ docker run -d --name myinfluxdb -v $(pwd)/volumes/myInfluxVolume:/var/lib/influx
 
 docker run -d --name myinfluxdb -v $(pwd)/volumes/myInfluxVolume:/var/lib/influxdb2 -v $PWD/config/influx/config.yml:/etc/influxdb2/config.yml -p 8086:8086 influxdb:2.7.4
 
+docker exec -it myinfluxdb /bin/bash
+
 docker container stop myinfluxdb
 
 docker container remove myinfluxdb
 
 # ----------------------------------------------------------------------------------------
 
+# https://hub.docker.com/_/telegraf
+
+docker run -d --name mytelegraf -v $(pwd)/config/telegraf/rabbitmqfordeviceeventsqueue.conf:/etc/telegraf/telegraf.conf:ro telegraf:1.29
+
+docker exec -it mytelegraf /bin/bash
+
+docker container stop mytelegraf
+
+docker container remove mytelegraf
+
+# ----------------------------------------------------------------------------------------
+
 # http://localhost:7999/UserSubscription/toGeneralDeviceEventStream/
+
+from(bucket: "device-events-db")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "device-metric")
+  |> filter(fn: (r) => r["_field"] == "temperature")
+  |> filter(fn: (r) => r["device-id"] =~ /DevFor_tenDevices_2024-01-29T14:08:01/)
+  //|> filter(fn: (r) => r["device-id"] =~ /0000000006/)
+  //|> distinct(column: "_field")  
+  //|> count(column: "_value")
