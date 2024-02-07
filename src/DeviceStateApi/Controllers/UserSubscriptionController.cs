@@ -17,6 +17,7 @@ public class UserSubscriptionController: ControllerBase
         Response.ContentType = "text/event-stream";  // Server-sent events
         Response.Headers.Append(key: "Grip-Hold", value: "stream");
         Response.Headers.Append(key: "Grip-Channel", value: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream);
+        Response.Headers.Append(key: "Access-Control-Allow-Origin", value: "*");
 
         return Task.FromResult<IActionResult>(Ok());
     }

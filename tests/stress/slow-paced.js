@@ -99,8 +99,8 @@ const buildInitialState = (deviceId, scenarioName) => {
     return {
         DevId: `DevFor_${scenarioName}-${deviceId.toString().padStart(10, "0")}`,
         Temp: 15.5,
-        Lat: 13.5698,
-        Lon: 35.6974
+        Lat: 51.513,
+        Lon: -0.09
     };
 }
 

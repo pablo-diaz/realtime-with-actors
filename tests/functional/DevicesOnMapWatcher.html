@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Example for watching all devices on a map</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+            var map = undefined;
+            var evtSource = undefined;
+            var devices = [];
+            var device01 = { marker: undefined, temperature: 15.5, id: "AL-1598" };
+
+            function initialize() {
+                createMap();
+                startServerSentEventsListener();
+            }
+            
+            function createMap() {
+                map = L.map('map').setView([51.505, -0.09], 13);
+    
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(map);
+            }
+
+            function startServerSentEventsListener() {
+                // https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
+                evtSource = new EventSource("http://localhost:7999/UserSubscription/toGeneralDeviceEventStream/");
+
+                evtSource.onmessage = (event) => {
+                    console.log("Non-expected message arrived");
+                    console.log(event);
+                };
+
+                evtSource.onerror = (err) => {
+                    console.error("EventSource failed:", err);
+                };
+
+                evtSource.addEventListener("DeviceHasBeenCreated", event => {
+                    addNewDevice(JSON.parse(event.data));
+                });
+
+                evtSource.addEventListener("DeviceTemperatureHasIncreased", event => {
+                    console.log("DeviceTemperatureHasIncreased message arrived");
+                    const temperatureIncreasedInfo = JSON.parse(event.data);
+                    console.log(`Temperature has Increased for device id '${temperatureIncreasedInfo.DevId}', with PrevTemp '${temperatureIncreasedInfo.PrevTemp}', NewTemp '${temperatureIncreasedInfo.NewTemp}' and at location (${temperatureIncreasedInfo.Coords.Lat}, ${temperatureIncreasedInfo.Coords.Lon})`);
+                });
+
+                evtSource.addEventListener("DeviceTemperatureHasDecreased", event => {
+                    console.log("DeviceTemperatureHasDecreased message arrived");
+                    const temperatureDecreasedInfo = JSON.parse(event.data);
+                    console.log(`Temperature has Decreased for device id '${temperatureDecreasedInfo.DevId}', with PrevTemp '${temperatureDecreasedInfo.PrevTemp}', NewTemp '${temperatureDecreasedInfo.NewTemp}' and at location (${temperatureDecreasedInfo.Coords.Lat}, ${temperatureDecreasedInfo.Coords.Lon})`);
+                });
+
+                evtSource.addEventListener("DeviceLocationHasChanged", event => {
+                    console.log("DeviceLocationHasChanged message arrived");
+                    const locationChangedInfo = JSON.parse(event.data);
+                    console.log(`Location has changed for Device id '${locationChangedInfo.DeviceId}', with PreLocation (${locationChangedInfo.PrevLoc.Lat}, ${locationChangedInfo.PrevLoc.Lon}) and NewLoc (${locationChangedInfo.NewLoc.Lat}, ${locationChangedInfo.NewLoc.Lon})`);
+                });
+            }
+
+            function addNewDevice(newDeviceInfo) {
+                console.log(`New device id '${newDeviceInfo.DevId}', with temperature '${newDeviceInfo.Temp}' and location (${newDeviceInfo.AtLoc.Lat}, ${newDeviceInfo.AtLoc.Lon})`);
+                var newDevice = { temperature: newDeviceInfo.Temp, id: newDeviceInfo.DevId };
+                newDevice.marker = L.marker([newDeviceInfo.AtLoc.Lat, newDeviceInfo.AtLoc.Lon]).addTo(map);
+                newDevice.marker.bindPopup(`<b>${newDevice.id}</b><br>Temp: ${newDevice.temperature}`);
+                devices.push(newDevice);
+            }
+
+            function addMarker() {
+                if(device01.marker !== undefined)
+                    return;
+
+                device01.marker = L.marker([51.5, -0.09]).addTo(map);
+                device01.marker.bindPopup(`<b>${device01.id}</b><br>Temp: ${device01.temperature}`);
+            }
+
+            function moveMarker() {
+                if(device01.marker === undefined) {
+                    alert("Add the marker first");
+                    return;
+                }
+
+                const currentLocation = device01.marker.getLatLng();
+                console.log(`Current location: Lat: ${currentLocation.lat} Long: ${currentLocation.lng}`);
+
+                device01.marker.setLatLng([51.6, 0.15]);
+
+                const newLocation = device01.marker.getLatLng();
+                console.log(`New location: Lat: ${newLocation.lat} Long: ${newLocation.lng}`);
+            }
+        </script>
+    </head>
+    <body onload="initialize()">
+        <div id="map" style="height: 600px;"></div>
+        <br />
+        <div>
+            <button onclick="addMarker()">Add a marker</button>
+            <button onclick="moveMarker()">Move marker</button>
+        </div>
+    </body>
+</html>
