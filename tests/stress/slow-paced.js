@@ -98,9 +98,9 @@ const serviceUrl = "http://localhost:5264";
 const buildInitialState = (deviceId, scenarioName) => {
     return {
         DevId: `DevFor_${scenarioName}-${deviceId.toString().padStart(10, "0")}`,
-        Temp: 15.5,
-        Lat: 51.513,
-        Lon: -0.09
+        Temp: 10 + Math.round(Math.random() * 30),
+        Lat: 51 + Math.round(Math.random() * 10) - Math.round(Math.random() * 10) + Math.random(),
+        Lon: 0 + Math.round(Math.random() * 10) - Math.round(Math.random() * 10) + Math.random()
     };
 }
 

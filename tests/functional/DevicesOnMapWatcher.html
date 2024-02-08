@@ -8,7 +8,9 @@
             var map = undefined;
             var evtSource = undefined;
             var devices = [];
+            
             var device01 = { marker: undefined, temperature: 15.5, id: "AL-1598" };
+            var lastEvent = undefined;
 
             function initialize() {
                 createMap();
@@ -38,34 +40,78 @@
                 };
 
                 evtSource.addEventListener("DeviceHasBeenCreated", event => {
-                    addNewDevice(JSON.parse(event.data));
+                    handleNewDevice(JSON.parse(event.data));
                 });
 
                 evtSource.addEventListener("DeviceTemperatureHasIncreased", event => {
-                    console.log("DeviceTemperatureHasIncreased message arrived");
-                    const temperatureIncreasedInfo = JSON.parse(event.data);
-                    console.log(`Temperature has Increased for device id '${temperatureIncreasedInfo.DevId}', with PrevTemp '${temperatureIncreasedInfo.PrevTemp}', NewTemp '${temperatureIncreasedInfo.NewTemp}' and at location (${temperatureIncreasedInfo.Coords.Lat}, ${temperatureIncreasedInfo.Coords.Lon})`);
+                    handleIncreasedTemperature(JSON.parse(event.data));
                 });
 
                 evtSource.addEventListener("DeviceTemperatureHasDecreased", event => {
-                    console.log("DeviceTemperatureHasDecreased message arrived");
-                    const temperatureDecreasedInfo = JSON.parse(event.data);
-                    console.log(`Temperature has Decreased for device id '${temperatureDecreasedInfo.DevId}', with PrevTemp '${temperatureDecreasedInfo.PrevTemp}', NewTemp '${temperatureDecreasedInfo.NewTemp}' and at location (${temperatureDecreasedInfo.Coords.Lat}, ${temperatureDecreasedInfo.Coords.Lon})`);
+                    handleDecreasedTemperature(JSON.parse(event.data));
                 });
 
                 evtSource.addEventListener("DeviceLocationHasChanged", event => {
-                    console.log("DeviceLocationHasChanged message arrived");
-                    const locationChangedInfo = JSON.parse(event.data);
-                    console.log(`Location has changed for Device id '${locationChangedInfo.DeviceId}', with PreLocation (${locationChangedInfo.PrevLoc.Lat}, ${locationChangedInfo.PrevLoc.Lon}) and NewLoc (${locationChangedInfo.NewLoc.Lat}, ${locationChangedInfo.NewLoc.Lon})`);
+                    handleLocationChange(JSON.parse(event.data));
                 });
             }
 
-            function addNewDevice(newDeviceInfo) {
+            function handleNewDevice(newDeviceInfo) {
                 console.log(`New device id '${newDeviceInfo.DevId}', with temperature '${newDeviceInfo.Temp}' and location (${newDeviceInfo.AtLoc.Lat}, ${newDeviceInfo.AtLoc.Lon})`);
+                lastEvent = newDeviceInfo;
                 var newDevice = { temperature: newDeviceInfo.Temp, id: newDeviceInfo.DevId };
                 newDevice.marker = L.marker([newDeviceInfo.AtLoc.Lat, newDeviceInfo.AtLoc.Lon]).addTo(map);
-                newDevice.marker.bindPopup(`<b>${newDevice.id}</b><br>Temp: ${newDevice.temperature}`);
+                setTemperatureToDevice(newDevice, newDevice.id, newDevice.temperature);
                 devices.push(newDevice);
+            }
+
+            function handleIncreasedTemperature(temperatureIncreasedInfo) {
+                console.log(`Temperature has Increased for device id '${temperatureIncreasedInfo.DevId}', with PrevTemp '${temperatureIncreasedInfo.PrevTemp}', NewTemp '${temperatureIncreasedInfo.NewTemp}' and at location (${temperatureIncreasedInfo.Coords.Lat}, ${temperatureIncreasedInfo.Coords.Lon})`);
+                lastEvent = temperatureIncreasedInfo;
+                setTemperature(temperatureIncreasedInfo.DevId, temperatureIncreasedInfo.NewTemp);
+            }
+
+            function handleDecreasedTemperature(temperatureDecreasedInfo) {
+                console.log(`Temperature has Decreased for device id '${temperatureDecreasedInfo.DevId}', with PrevTemp '${temperatureDecreasedInfo.PrevTemp}', NewTemp '${temperatureDecreasedInfo.NewTemp}' and at location (${temperatureDecreasedInfo.Coords.Lat}, ${temperatureDecreasedInfo.Coords.Lon})`);
+                lastEvent = temperatureDecreasedInfo;
+                setTemperature(temperatureDecreasedInfo.DevId, temperatureDecreasedInfo.NewTemp);
+            }
+
+            function handleLocationChange(locationChangedInfo) {
+                console.log(`Location has changed for Device id '${locationChangedInfo.DeviceId}', with PrevLocation (${locationChangedInfo.PrevLoc.Lat}, ${locationChangedInfo.PrevLoc.Lon}) and NewLoc (${locationChangedInfo.NewLoc.Lat}, ${locationChangedInfo.NewLoc.Lon})`);
+                lastEvent = locationChangedInfo;
+                const maybeDeviceFound = findDevice(locationChangedInfo.DeviceId);
+                if(maybeDeviceFound === undefined)
+                    return;
+                
+                maybeDeviceFound.marker.setLatLng([locationChangedInfo.NewLoc.Lat, locationChangedInfo.NewLoc.Lon]);
+            }
+
+            function setTemperature(toDeviceId, newTemperature) {
+                const maybeDeviceFound = findDevice(toDeviceId);
+                if(maybeDeviceFound === undefined) {
+                    console.log(`Device '${toDeviceId}' was NOT found`);
+                    return;
+                }
+
+                maybeDeviceFound.marker.unbindPopup();
+                setTemperatureToDevice(maybeDeviceFound, toDeviceId, newTemperature);
+            }
+            
+            function setTemperatureToDevice(device, deviceId, temperature) {
+                device.marker.bindPopup(`<b>${deviceId}</b><br>Temp: ${temperature}`);
+            }
+
+            function findDevice(byId) {
+                return devices.find(d => d.id === byId);
+            }
+
+            function clearAllMarkers() {
+                devices.forEach(dev => {
+                    dev.marker.removeFrom(map)
+                });
+
+                devices = [];
             }
 
             function addMarker() {
@@ -98,6 +144,7 @@
         <div>
             <button onclick="addMarker()">Add a marker</button>
             <button onclick="moveMarker()">Move marker</button>
+            <button onclick="clearAllMarkers()">Clear all markers</button>
         </div>
     </body>
 </html>
