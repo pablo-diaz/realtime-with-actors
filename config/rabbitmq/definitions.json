@@ -1,0 +1,60 @@
+{
+    "queues": [
+        {
+            "arguments":{},
+            "auto_delete":false,
+            "durable":false,
+            "name":"device-events-q",
+            "type":"classic",
+            "vhost":"/"
+        }
+    ],
+    "exchanges": [
+        {
+            "arguments":{},
+            "auto_delete":false,
+            "durable":false,
+            "name":"device-events-ex",
+            "type":"direct",
+            "vhost":"/"
+        }
+    ],
+    "bindings": [
+        {
+            "arguments":{},
+            "destination":"device-events-q",
+            "destination_type":"queue",
+            "routing_key":"device-events-rk",
+            "source":"device-events-ex",
+            "vhost":"/"
+        }
+    ],
+    "vhosts":[
+        {
+            "limits":[],
+            "metadata":{
+                "description":"Default virtual host",
+                "tags":[]
+            },
+            "name":"/"
+        }
+    ],
+    "users":[
+        {
+            "hashing_algorithm":"rabbit_password_hashing_sha256",
+            "limits":{},
+            "name":"guest",
+            "password_hash":"YNGdw981tvIqze3q5EHetiYKwiDHnK5a/0DL2PxiYzxneE6/",
+            "tags":["administrator"]
+        }
+    ],
+    "permissions":[
+        {
+            "configure":".*",
+            "read":".*",
+            "user":"guest",
+            "vhost":"/",
+            "write":".*"
+        }
+    ]
+}
