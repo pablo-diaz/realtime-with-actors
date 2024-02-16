@@ -1,0 +1,6 @@
+ASPNETCORE_URLS=http://0.0.0.0:80
+ASPNETCORE_ENVIRONMENT=Production
+RabbitMqConfig__ConnectionString=amqp://guest:guest@brokerserver:5672/
+RabbitMqConfig__Events__Exchange=device-events-ex
+RabbitMqConfig__Events__Queue=device-events-q
+RabbitMqConfig__Events__RoutingKey=device-events-rk

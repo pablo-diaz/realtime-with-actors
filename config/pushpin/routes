@@ -1,1 +1,1 @@
-* host.docker.internal:5198,over_http
+* devicestateserver:80,over_http

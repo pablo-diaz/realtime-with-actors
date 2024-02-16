@@ -1,0 +1,57 @@
+version: "3.9"
+services:
+  brokerserver:
+    container_name: broker_container
+    image: "rabbitmq:3-management-alpine"
+    volumes:
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/rabbitmq.conf
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/conf.d/definitions.json
+    networks:
+      - backend_space
+
+  timeseriesserver:
+    container_name: timeseries_container
+    image: "influxdb:2.7.4"
+    env_file:
+      - ./config/docker/influxdb/docker-env-vars
+    networks:
+      - backend_space
+
+  pushnotificationsserver:
+    container_name: pushnotifications_container
+    image: "fanout/pushpin"
+    volumes:
+      - ./config/pushpin/routes:/etc/pushpin/routes
+    networks:
+      - backend_space
+
+  eventpublisherserver:
+    container_name: eventpublisher_container
+    image: "eventpublisher:c8.0-001"
+    env_file:
+      - ./config/docker/event-publisher/docker-env-vars
+    networks:
+      - backend_space
+  
+  devicestateserver:
+    container_name: devicestate_container
+    image: "devicestate:c8.0-001"
+    env_file:
+      - ./config/docker/device-state/docker-env-vars
+    networks:
+      - backend_space
+
+  webserver:
+    container_name: webserver_container
+    image: "nginx:1.25.2"
+    volumes:
+      - ./config/nginx/nginx.without.tls.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+    networks: 
+      - backend_space
+
+networks:
+  backend_space:
+    name: backend_network
+    driver: bridge
