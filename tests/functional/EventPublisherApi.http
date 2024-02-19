@@ -1,12 +1,12 @@
-@EventPublisherApi_HostAddress = http://localhost:5264
+@EventPublisherApi_HostAddress = http://localhost:80
 
-POST {{EventPublisherApi_HostAddress}}/event/
+POST {{EventPublisherApi_HostAddress}}/api/devicemetric
 content-type: application/json
 
 {
-    "DevId": "AL-0001",
-    "Temp": 15.5,
-    "Lat": 13.5698,
+    "DevId": "AL-0005",
+    "Temp": 17.5,
+    "Lat": 15.5698,
     "Lon": 35.6974
 }
 

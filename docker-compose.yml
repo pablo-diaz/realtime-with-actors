@@ -3,9 +3,15 @@ services:
   brokerserver:
     container_name: broker_container
     image: "rabbitmq:3-management-alpine"
+    hostname: "my-rabbit"
     volumes:
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/rabbitmq.conf
       - ./config/rabbitmq/definitions.json:/etc/rabbitmq/conf.d/definitions.json
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - backend_space
 
@@ -30,6 +36,9 @@ services:
     image: "eventpublisher:c8.0-001"
     env_file:
       - ./config/docker/event-publisher/docker-env-vars
+    depends_on:
+      brokerserver:
+        condition: service_healthy
     networks:
       - backend_space
   
@@ -38,6 +47,9 @@ services:
     image: "devicestate:c8.0-001"
     env_file:
       - ./config/docker/device-state/docker-env-vars
+    depends_on:
+      brokerserver:
+        condition: service_healthy
     networks:
       - backend_space
 
@@ -48,6 +60,13 @@ services:
       - ./config/nginx/nginx.without.tls.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "80:80"
+    depends_on:
+      eventpublisherserver:
+        condition: service_started
+      devicestateserver:
+        condition: service_started
+      pushnotificationsserver:
+        condition: service_started
     networks: 
       - backend_space
 

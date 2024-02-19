@@ -9,9 +9,6 @@
             var evtSource = undefined;
             var devices = [];
             
-            var device01 = { marker: undefined, temperature: 15.5, id: "AL-1598" };
-            var lastEvent = undefined;
-
             function initialize() {
                 createMap();
                 startServerSentEventsListener();
@@ -28,7 +25,7 @@
 
             function startServerSentEventsListener() {
                 // https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-                evtSource = new EventSource("http://localhost:7999/UserSubscription/toGeneralDeviceEventStream/");
+                evtSource = new EventSource("http://localhost:80/UserSubscription/toGeneralDeviceEventStream");
 
                 evtSource.onmessage = (event) => {
                     console.log("Non-expected message arrived");
@@ -58,7 +55,6 @@
 
             function handleNewDevice(newDeviceInfo) {
                 console.log(`New device id '${newDeviceInfo.DevId}', with temperature '${newDeviceInfo.Temp}' and location (${newDeviceInfo.AtLoc.Lat}, ${newDeviceInfo.AtLoc.Lon})`);
-                lastEvent = newDeviceInfo;
                 var newDevice = { temperature: newDeviceInfo.Temp, id: newDeviceInfo.DevId };
                 newDevice.marker = L.marker([newDeviceInfo.AtLoc.Lat, newDeviceInfo.AtLoc.Lon]).addTo(map);
                 setTemperatureToDevice(newDevice, newDevice.id, newDevice.temperature);
@@ -67,19 +63,16 @@
 
             function handleIncreasedTemperature(temperatureIncreasedInfo) {
                 console.log(`Temperature has Increased for device id '${temperatureIncreasedInfo.DevId}', with PrevTemp '${temperatureIncreasedInfo.PrevTemp}', NewTemp '${temperatureIncreasedInfo.NewTemp}' and at location (${temperatureIncreasedInfo.Coords.Lat}, ${temperatureIncreasedInfo.Coords.Lon})`);
-                lastEvent = temperatureIncreasedInfo;
                 setTemperature(temperatureIncreasedInfo.DevId, temperatureIncreasedInfo.NewTemp);
             }
 
             function handleDecreasedTemperature(temperatureDecreasedInfo) {
                 console.log(`Temperature has Decreased for device id '${temperatureDecreasedInfo.DevId}', with PrevTemp '${temperatureDecreasedInfo.PrevTemp}', NewTemp '${temperatureDecreasedInfo.NewTemp}' and at location (${temperatureDecreasedInfo.Coords.Lat}, ${temperatureDecreasedInfo.Coords.Lon})`);
-                lastEvent = temperatureDecreasedInfo;
                 setTemperature(temperatureDecreasedInfo.DevId, temperatureDecreasedInfo.NewTemp);
             }
 
             function handleLocationChange(locationChangedInfo) {
                 console.log(`Location has changed for Device id '${locationChangedInfo.DeviceId}', with PrevLocation (${locationChangedInfo.PrevLoc.Lat}, ${locationChangedInfo.PrevLoc.Lon}) and NewLoc (${locationChangedInfo.NewLoc.Lat}, ${locationChangedInfo.NewLoc.Lon})`);
-                lastEvent = locationChangedInfo;
                 const maybeDeviceFound = findDevice(locationChangedInfo.DeviceId);
                 if(maybeDeviceFound === undefined)
                     return;
@@ -113,37 +106,12 @@
 
                 devices = [];
             }
-
-            function addMarker() {
-                if(device01.marker !== undefined)
-                    return;
-
-                device01.marker = L.marker([51.5, -0.09]).addTo(map);
-                device01.marker.bindPopup(`<b>${device01.id}</b><br>Temp: ${device01.temperature}`);
-            }
-
-            function moveMarker() {
-                if(device01.marker === undefined) {
-                    alert("Add the marker first");
-                    return;
-                }
-
-                const currentLocation = device01.marker.getLatLng();
-                console.log(`Current location: Lat: ${currentLocation.lat} Long: ${currentLocation.lng}`);
-
-                device01.marker.setLatLng([51.6, 0.15]);
-
-                const newLocation = device01.marker.getLatLng();
-                console.log(`New location: Lat: ${newLocation.lat} Long: ${newLocation.lng}`);
-            }
         </script>
     </head>
     <body onload="initialize()">
         <div id="map" style="height: 600px;"></div>
         <br />
         <div>
-            <button onclick="addMarker()">Add a marker</button>
-            <button onclick="moveMarker()">Move marker</button>
             <button onclick="clearAllMarkers()">Clear all markers</button>
         </div>
     </body>

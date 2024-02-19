@@ -93,7 +93,7 @@ const possibleTriggers = [
     triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction
 ];
 
-const serviceUrl = "http://localhost:5264";
+const serviceUrl = "http://localhost:80";
 
 const buildInitialState = (deviceId, scenarioName) => {
     return {
@@ -109,7 +109,7 @@ const sendDeviceState = deviceStateToSend => {
         headers: { 'Content-Type': 'application/json' }
     };
 
-    http.post(`${serviceUrl}/event`, JSON.stringify(deviceStateToSend), params);
+    http.post(`${serviceUrl}/api/devicemetric`, JSON.stringify(deviceStateToSend), params);
 }
 
 const shouldItDecrease = () => Math.round(Math.random() * 10) % 2 == 0;
