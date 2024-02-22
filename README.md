@@ -1,8 +1,10 @@
-# realtime-with-actors
-Realtime application using Actor Model and Domain Driven Design
+# Device events tracing application on realtime
+
+## Overall architecture
+![Overall architecture](./doc/architecture.jpg?raw=true)
 
 ## Motivation
-I wanted to create this solution architecture, to learn about some technologies and to apply some concepts
+I wanted to create this solution architecture, to learn about some technologies and to apply some concepts.
 
 ## Use Case
 I wanted to know how I could trace devices, about their temperature and location, so I can quickly be notified when a device temperature has increased or decreased, or its location has changed, as well as have certain alarms, such as when devices get out of a specific scope/region, or their temperature get off a specific range I would be interested to watch out for.
