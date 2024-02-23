@@ -21,3 +21,6 @@ I acquire device data (current location and temperature) quite often, and I send
 - https://k6.io/  To simulate stress conditions, when sending device data, such as 10K concurrent devices sending information
 - https://www.influxdata.com/time-series-platform/telegraf/   To monitor RabbitMQ performance
 - ASP.Net Core 8 with C#
+
+## Simulation with Stress tests
+![Simulation](./doc/simulation01.jpg?raw=true)
