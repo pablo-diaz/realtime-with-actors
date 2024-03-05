@@ -3,6 +3,7 @@
 import { sleep } from 'k6';
 import http from 'k6/http';
 import { vu, scenario } from 'k6/execution';
+import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
 export const options = {
     discardResponseBodies: true,
@@ -11,54 +12,72 @@ export const options = {
         coldStart: {
             executor: 'per-vu-iterations',
             startTime: '0s',
+            maxDuration: '1s',
+            gracefulStop: '1s',
             vus: 1,
             iterations: 1
         },
         oneDevice: {
             executor: 'per-vu-iterations',
             startTime: '1s',
+            maxDuration: '90s',
+            gracefulStop: '1s',
             vus: 1,
             iterations: 1
         },
         tenDevices: {
             executor: 'per-vu-iterations',
             startTime: '100s',
+            maxDuration: '90s',
+            gracefulStop: '1s',
             vus: 10,
             iterations: 1
         },
         fiftyDevices: {
             executor: 'per-vu-iterations',
             startTime: '200s',
+            maxDuration: '90s',
+            gracefulStop: '1s',
             vus: 50,
             iterations: 1
         },
         twoHundredDevices: {
             executor: 'per-vu-iterations',
             startTime: '300s',
+            maxDuration: '90s',
+            gracefulStop: '1s',
             vus: 200,
             iterations: 1
         },
         oneThousandDevices: {
             executor: 'per-vu-iterations',
             startTime: '400s',
+            maxDuration: '90s',
+            gracefulStop: '1s',
             vus: 1000,
             iterations: 1
         },
         threeThousandDevices: {
             executor: 'per-vu-iterations',
             startTime: '500s',
+            maxDuration: '90s',
+            gracefulStop: '1s',
             vus: 3000,
             iterations: 1
         },
         fiveThousandDevices: {
             executor: 'per-vu-iterations',
             startTime: '600s',
+            maxDuration: '90s',
+            gracefulStop: '1s',
             vus: 5000,
             iterations: 1
         },
         tenThousandDevices: {
             executor: 'per-vu-iterations',
             startTime: '700s',
+            maxDuration: '90s',
+            gracefulStop: '1s',
             vus: 10000,
             iterations: 1
         }
@@ -98,50 +117,53 @@ const serviceUrl = "http://localhost:81";
 const buildInitialState = (deviceId, scenarioName) => {
     return {
         DevId: `DevFor_${scenarioName}-${deviceId.toString().padStart(10, "0")}`,
-        Temp: 10 + Math.round(Math.random() * 30),
+        Temp: randomIntBetween(10, 30),
         Lat: 51 + Math.round(Math.random() * 10) - Math.round(Math.random() * 10) + Math.random(),
         Lon: 0 + Math.round(Math.random() * 10) - Math.round(Math.random() * 10) + Math.random()
     };
 }
 
-const sendDeviceState = deviceStateToSend => {
+const sendDeviceState = (deviceStateToSend, actionPerformed) => {
     const params = {
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': `${actionPerformed} for ${deviceStateToSend.DevId}`
+        }
     };
 
     http.post(`${serviceUrl}/api/devicemetric`, JSON.stringify(deviceStateToSend), params);
 }
 
-const shouldItDecrease = () => Math.round(Math.random() * 10) % 2 == 0;
+const shouldItDecrease = () => randomIntBetween(0, 10) % 2 == 0;
 
 const startRandomTransitioningPhase = withDeviceState => {
-    const cycles = 50 + Math.round(Math.random() * 50);
+    const cycles = randomIntBetween(50, 100);
     for(let i = 1; i <= cycles; i++) {
         const possibleTriggerToTake = possibleTriggers[Math.round(Math.random() * possibleTriggers.length)];
         if(possibleTriggerToTake === triggers.changeTemperature) {
             withDeviceState.Temp += Math.random() * 2.0 * (shouldItDecrease() ? -1 : 1);
-            sendDeviceState(withDeviceState);
+            sendDeviceState(withDeviceState, `[${i}/${cycles}] Changing temperature`);
         }
         else if(possibleTriggerToTake === triggers.changeLocation) {
             withDeviceState.Lat += Math.random() * 1.5 * (shouldItDecrease() ? -1 : 1);
             withDeviceState.Lon += Math.random() * 1.5 * (shouldItDecrease() ? -1 : 1);
-            sendDeviceState(withDeviceState);
+            sendDeviceState(withDeviceState, `[${i}/${cycles}] Changing location`);
         }
         else if(possibleTriggerToTake === triggers.noAction) {
-            sendDeviceState(withDeviceState);
+            sendDeviceState(withDeviceState, `[${i}/${cycles}] No action`);
         }
-        sleep(1);
+        sleep(0.5 + Math.random());
     }
 }
 
 const runColdStartScenario = (deviceId, scenarioName) => {
     const initialDeviceState = buildInitialState(deviceId, scenarioName);
-    sendDeviceState(initialDeviceState);
+    sendDeviceState(initialDeviceState, 'Initial state');
 }
 
 const runOtherScenarios = (deviceId, scenarioName) => {
     const initialDeviceState = buildInitialState(deviceId, scenarioName);
-    sendDeviceState(initialDeviceState);
+    sendDeviceState(initialDeviceState, 'Initial state');
     startRandomTransitioningPhase(initialDeviceState);
 }
 
