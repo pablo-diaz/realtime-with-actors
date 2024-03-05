@@ -93,7 +93,7 @@ const possibleTriggers = [
     triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction
 ];
 
-const serviceUrl = "http://localhost:80";
+const serviceUrl = "http://localhost:81";
 
 const buildInitialState = (deviceId, scenarioName) => {
     return {
