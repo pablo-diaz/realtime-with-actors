@@ -36,47 +36,47 @@ export const options = {
         fiftyDevices: {
             executor: 'per-vu-iterations',
             startTime: '200s',
-            maxDuration: '90s',
+            maxDuration: '100s',
             gracefulStop: '1s',
             vus: 50,
             iterations: 1
         },
         twoHundredDevices: {
             executor: 'per-vu-iterations',
-            startTime: '300s',
-            maxDuration: '90s',
+            startTime: '320s',
+            maxDuration: '100s',
             gracefulStop: '1s',
             vus: 200,
             iterations: 1
         },
         oneThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '400s',
-            maxDuration: '90s',
+            startTime: '440s',
+            maxDuration: '200s',
             gracefulStop: '1s',
             vus: 1000,
             iterations: 1
         },
         threeThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '500s',
-            maxDuration: '90s',
+            startTime: '660s',
+            maxDuration: '300s',
             gracefulStop: '1s',
             vus: 3000,
             iterations: 1
         },
         fiveThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '600s',
-            maxDuration: '90s',
+            startTime: '980s',
+            maxDuration: '400s',
             gracefulStop: '1s',
             vus: 5000,
             iterations: 1
         },
         tenThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '700s',
-            maxDuration: '90s',
+            startTime: '1400s',
+            maxDuration: '600s',
             gracefulStop: '1s',
             vus: 10000,
             iterations: 1
@@ -137,7 +137,7 @@ const sendDeviceState = (deviceStateToSend, actionPerformed) => {
 const shouldItDecrease = () => randomIntBetween(0, 10) % 2 == 0;
 
 const startRandomTransitioningPhase = withDeviceState => {
-    const cycles = randomIntBetween(50, 100);
+    const cycles = randomIntBetween(40, 70);
     for(let i = 1; i <= cycles; i++) {
         const possibleTriggerToTake = possibleTriggers[Math.round(Math.random() * possibleTriggers.length)];
         if(possibleTriggerToTake === triggers.changeTemperature) {
