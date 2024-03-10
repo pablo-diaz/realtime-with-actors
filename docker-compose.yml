@@ -35,7 +35,7 @@ services:
 
   eventpublisherserver:
     container_name: eventpublisher_container
-    image: "eventpublisher:c8.0-001"
+    image: "eventpublisher:c8.0-002"
     env_file:
       - ./config/docker/event-publisher/docker-env-vars
     depends_on:
