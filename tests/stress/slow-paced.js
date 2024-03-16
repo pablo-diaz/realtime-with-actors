@@ -36,47 +36,48 @@ export const options = {
         fiftyDevices: {
             executor: 'per-vu-iterations',
             startTime: '200s',
-            maxDuration: '100s',
+            maxDuration: '90s',
             gracefulStop: '1s',
             vus: 50,
             iterations: 1
         },
         twoHundredDevices: {
             executor: 'per-vu-iterations',
-            startTime: '320s',
-            maxDuration: '100s',
+            startTime: '300s',
+            maxDuration: '90s',
             gracefulStop: '1s',
             vus: 200,
             iterations: 1
         },
         oneThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '440s',
-            maxDuration: '200s',
+            startTime: '400s',
+            maxDuration: '90s',
             gracefulStop: '1s',
             vus: 1000,
             iterations: 1
         },
         threeThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '660s',
-            maxDuration: '300s',
+            startTime: '500s',
+            maxDuration: '100s',
             gracefulStop: '1s',
             vus: 3000,
             iterations: 1
         },
         fiveThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '980s',
-            maxDuration: '400s',
+            startTime: '610s',
+            maxDuration: '100s',
             gracefulStop: '1s',
             vus: 5000,
             iterations: 1
         },
         tenThousandDevices: {
             executor: 'per-vu-iterations',
-            startTime: '1400s',
-            maxDuration: '600s',
+            //startTime: '2s',
+            startTime: '720s',
+            maxDuration: '300s',
             gracefulStop: '1s',
             vus: 10000,
             iterations: 1
@@ -116,7 +117,7 @@ const serviceUrl = "http://localhost:81";
 
 const buildInitialState = (deviceId, scenarioName) => {
     return {
-        DevId: `DevFor_${scenarioName}-${deviceId.toString().padStart(10, "0")}`,
+        DevId: `DevFor!${scenarioName}@${deviceId.toString().padStart(10, "0")}`,
         Temp: randomIntBetween(10, 30),
         Lat: 51 + Math.round(Math.random() * 10) - Math.round(Math.random() * 10) + Math.random(),
         Lon: 0 + Math.round(Math.random() * 10) - Math.round(Math.random() * 10) + Math.random()

@@ -1,13 +1,14 @@
-@EventPublisherApi_HostAddress = http://localhost:80
+@EventPublisherApi_HostAddress = http://localhost:5264
 
-POST {{EventPublisherApi_HostAddress}}/api/devicemetric
+POST {{EventPublisherApi_HostAddress}}/event
 content-type: application/json
 
 {
-    "DevId": "AL-0005",
-    "Temp": 17.5,
-    "Lat": 15.5698,
-    "Lon": 35.6974
+    "DevId": "AL-0012",
+    "Temp": 48.5,
+    "Lat": 38.5698,
+    "Lon": 45.6974
 }
 
 ###
+GET http:///var/run/docker.sock/v1.24/containers/json?filters={"status":{"running":true}}
