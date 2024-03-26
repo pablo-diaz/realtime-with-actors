@@ -14,6 +14,7 @@ namespace Services
         private readonly RabbitMqConfiguration _config;
         private readonly IConnection _conn;
         private readonly IModel _channel;
+        private static object syncRoot = new object();
 
         public RabbitMqMessageSender(RabbitMqConfiguration config)
         {
@@ -44,7 +45,7 @@ namespace Services
             var props = _channel.CreateBasicProperties();
             props.ContentType = "application/json";
 
-            lock(_channel) {
+            lock(syncRoot) {
                 _channel.BasicPublish(exchange: _config.Events.Exchange, routingKey: _config.Events.RoutingKey, basicProperties: props,
                     body: System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message)));
             }
