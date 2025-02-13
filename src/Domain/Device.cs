@@ -3,72 +3,71 @@ using Domain.Events;
 
 using CSharpFunctionalExtensions;
 
-namespace Domain
+namespace Domain;
+
+public class Device : AggregateRoot<string>
 {
-    public class Device : AggregateRoot<string>
+    public Temperature CurrentTemperature { get; private set; }
+    private Temperature _mostRecentTemperatureNotifiedFor;
+
+    public Coords CurrentLocation { get; private set; }
+    private Coords _mostRecentLocationNotifiedFor;
+
+    private Device(string id, Temperature initialTemperature, Coords initialCoords): base(id)
     {
-        public Temperature CurrentTemperature { get; private set; }
-        private Temperature _mostRecentTemperatureNotifiedFor;
+        CurrentTemperature = initialTemperature;
+        _mostRecentTemperatureNotifiedFor = initialTemperature;
 
-        public Coords CurrentLocation { get; private set; }
-        private Coords _mostRecentLocationNotifiedFor;
+        CurrentLocation = initialCoords;
+        _mostRecentLocationNotifiedFor = initialCoords;
 
-        private Device(string id, Temperature initialTemperature, Coords initialCoords): base(id)
-        {
-            CurrentTemperature = initialTemperature;
-            _mostRecentTemperatureNotifiedFor = initialTemperature;
+        RaiseDomainEvent(new DeviceHasBeenCreated(DeviceId: id, WithTemperature: CurrentTemperature, AtLocation: CurrentLocation));
+    }
 
-            CurrentLocation = initialCoords;
-            _mostRecentLocationNotifiedFor = initialCoords;
+    public static Result<Device> Create(string deviceId, Temperature initialTemperature, Coords initialCoords)
+    {
+        if(string.IsNullOrEmpty(deviceId))
+            return Result.Failure<Device>("Please provide a valid Device Id");
 
-            RaiseDomainEvent(new DeviceHasBeenCreated(deviceId: id, withTemperature: CurrentTemperature, atLocation: CurrentLocation));
-        }
+        return new Device(id: deviceId, initialTemperature: initialTemperature, initialCoords: initialCoords);
+    }
 
-        public static Result<Device> Create(string deviceId, Temperature initialTemperature, Coords initialCoords)
-        {
-            if(string.IsNullOrEmpty(deviceId))
-                return Result.Failure<Device>("Please provide a valid Device Id");
-
-            return new Device(id: deviceId, initialTemperature: initialTemperature, initialCoords: initialCoords);
-        }
-
-        public void ChangeTemperature(Temperature newTemperature, decimal withSimilarityThreshold)
-        {
-            if(CurrentTemperature == newTemperature)
-                return;
-
-            var previousMostRecentTemperatureNotifiedFor = _mostRecentTemperatureNotifiedFor;
-            CurrentTemperature = newTemperature;
-
-            if(newTemperature.IsSimilar(to: _mostRecentTemperatureNotifiedFor, belowSimilarityThreshold: withSimilarityThreshold))
-                return;
-
-            _mostRecentTemperatureNotifiedFor = newTemperature;
-
-            if(newTemperature < previousMostRecentTemperatureNotifiedFor)
-                RaiseDomainEvent(new DeviceTemperatureHasDecreased(deviceId: Id, whenDeviceWasLocatedAt: CurrentLocation,
-                    previousTemperature: previousMostRecentTemperatureNotifiedFor, newTemperature: newTemperature));
-            else 
-                RaiseDomainEvent(new DeviceTemperatureHasIncreased(deviceId: Id, whenDeviceWasLocatedAt: CurrentLocation,
-                    previousTemperature: previousMostRecentTemperatureNotifiedFor, newTemperature: newTemperature));
-            
+    public void ChangeTemperature(Temperature newTemperature, decimal withSimilarityThreshold)
+    {
+        if(CurrentTemperature == newTemperature)
             return;
-        }
 
-        public void ChangeLocation(Coords newLocation, decimal withAtLeastDistanceInKm)
-        {
-            if(CurrentLocation == newLocation)
-                return;
+        var previousMostRecentTemperatureNotifiedFor = _mostRecentTemperatureNotifiedFor;
+        CurrentTemperature = newTemperature;
 
-            var previousMostRecentLocationNotifiedFor = _mostRecentLocationNotifiedFor;
-            CurrentLocation = newLocation;
+        if(newTemperature.IsSimilar(to: _mostRecentTemperatureNotifiedFor, belowSimilarityThreshold: withSimilarityThreshold))
+            return;
 
-            if(newLocation.GetDistanceInKm(to: _mostRecentLocationNotifiedFor) < withAtLeastDistanceInKm)
-                return;
+        _mostRecentTemperatureNotifiedFor = newTemperature;
 
-            _mostRecentLocationNotifiedFor = newLocation;
+        if(newTemperature < previousMostRecentTemperatureNotifiedFor)
+            RaiseDomainEvent(new DeviceTemperatureHasDecreased(DeviceId: Id, WhenDeviceWasLocatedAt: CurrentLocation,
+                PreviousTemperature: previousMostRecentTemperatureNotifiedFor, NewTemperature: newTemperature));
+        else 
+            RaiseDomainEvent(new DeviceTemperatureHasIncreased(DeviceId: Id, WhenDeviceWasLocatedAt: CurrentLocation,
+                PreviousTemperature: previousMostRecentTemperatureNotifiedFor, NewTemperature: newTemperature));
+        
+        return;
+    }
 
-            RaiseDomainEvent(new DeviceLocationHasChanged(deviceId: Id, previousLocation: previousMostRecentLocationNotifiedFor, newLocation: newLocation));
-        }
+    public void ChangeLocation(Coords newLocation, decimal withAtLeastDistanceInKm)
+    {
+        if(CurrentLocation == newLocation)
+            return;
+
+        var previousMostRecentLocationNotifiedFor = _mostRecentLocationNotifiedFor;
+        CurrentLocation = newLocation;
+
+        if(newLocation.GetDistanceInKm(to: _mostRecentLocationNotifiedFor) < withAtLeastDistanceInKm)
+            return;
+
+        _mostRecentLocationNotifiedFor = newLocation;
+
+        RaiseDomainEvent(new DeviceLocationHasChanged(DeviceId: Id, PreviousLocation: previousMostRecentLocationNotifiedFor, NewLocation: newLocation));
     }
 }
