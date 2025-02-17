@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -5,6 +6,8 @@ using DeviceStateServices;
 using Domain.Events;
 
 using MediatR;
+
+namespace Infrastructure.EventHandlers;
 
 public sealed class PersistenceForDeviceLocationHasChangedEvent : INotificationHandler<DeviceLocationHasChanged>
 {
@@ -15,13 +18,7 @@ public sealed class PersistenceForDeviceLocationHasChangedEvent : INotificationH
         this._eventStore = eventStore;
     }
 
-    public Task Handle(DeviceLocationHasChanged @event, CancellationToken cancellationToken)
-    {
-        return _eventStore.StoreLocationChangeEvent(new LocationChangeEvent(
-            DeviceId: @event.DeviceId, LoggedAt: System.DateTimeOffset.UtcNow,
-            PreviousLocation: (Latitude: @event.PreviousLocation.Latitude, Longitude: @event.PreviousLocation.Longitude),
-            NewLocation: (Latitude: @event.NewLocation.Latitude, Longitude: @event.NewLocation.Longitude),
-            distanceInKms: @event.PreviousLocation.GetDistanceInKm(to: @event.NewLocation)
-        ));
-    }
+    public Task Handle(DeviceLocationHasChanged @event, CancellationToken cancellationToken) =>
+        _eventStore.StoreEvent(@event, at: DateTimeOffset.UtcNow);
+
 }

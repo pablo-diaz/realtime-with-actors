@@ -1,6 +1,9 @@
-using Task = System.Threading.Tasks.Task;
+using System;
+using System.Threading.Tasks;
 
 using DeviceStateServices;
+
+using Domain.Events;
 
 using Infrastructure.ServiceImpl.Dtos;
 
@@ -11,9 +14,9 @@ namespace Infrastructure;
 
 public sealed class InlfuxDbEventStore : IEventStore
 {
-    private readonly InfluxDbConfig? _configuration;
-    private readonly InfluxDBClient? _client;
-    private readonly WriteApiAsync? _asyncWritter;
+    private readonly InfluxDbConfig _configuration;
+    private readonly InfluxDBClient _client;
+    private readonly WriteApiAsync _asyncWritter;
 
     public InlfuxDbEventStore(InfluxDbConfig config)
     {
@@ -27,27 +30,36 @@ public sealed class InlfuxDbEventStore : IEventStore
         _client?.Dispose();
     }
 
-    public Task StoreTemperatureMetric(TemperatureMetric @event)
+    public Task StoreEvent(DeviceEvent @event, DateTimeOffset at) => @event switch {
+        DeviceHasBeenCreated e => StoreEvent(e, at),
+        DeviceTemperatureHasIncreased e => StoreEvent(e, at),
+        DeviceTemperatureHasDecreased e => StoreEvent(e, at),
+        DeviceLocationHasChanged e => StoreEvent(e, at),
+        _ => Task.CompletedTask
+    };
+
+    private Task StoreEvent(DeviceHasBeenCreated @event, DateTimeOffset at)
     {
-        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceMetric.From(@event), precision: WritePrecision.Ns,
+        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceCreatedEvent.From(@event, at), precision: WritePrecision.Ns,
             bucket: _configuration?.Bucket, org: _configuration?.Organization)!;
     }
 
-    public Task StoreDeviceCreatedEvent(DeviceCreatedEvent @event)
+    public Task StoreEvent(DeviceTemperatureHasIncreased @event, DateTimeOffset at)
     {
-        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceCreatedEvent.From(@event), precision: WritePrecision.Ns,
+        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceTemperatureChangedEvent.From(@event, at), precision: WritePrecision.Ns,
             bucket: _configuration?.Bucket, org: _configuration?.Organization)!;
     }
 
-    public Task StoreTemperatureChangeEvent(TemperatureChangeEvent @event)
+    public Task StoreEvent(DeviceTemperatureHasDecreased @event, DateTimeOffset at)
     {
-        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceTemperatureChangedEvent.From(@event), precision: WritePrecision.Ns,
+        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceTemperatureChangedEvent.From(@event, at), precision: WritePrecision.Ns,
             bucket: _configuration?.Bucket, org: _configuration?.Organization)!;
     }
 
-    public Task StoreLocationChangeEvent(LocationChangeEvent @event)
+    public Task StoreEvent(DeviceLocationHasChanged @event, DateTimeOffset at)
     {
-        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceLocationChangedEvent.From(@event), precision: WritePrecision.Ns,
+        return _asyncWritter?.WriteMeasurementAsync(measurement: InfluxDeviceLocationChangedEvent.From(@event, at), precision: WritePrecision.Ns,
             bucket: _configuration?.Bucket, org: _configuration?.Organization)!;
     }
+
 }

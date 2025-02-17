@@ -10,8 +10,8 @@ namespace Jobs;
 public class DeviceEventConsumer: IHostedService, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
-    private IServiceScope? _serviceScope = null;
-    private Services.IMessageReceiver? _messageReceiver = null;
+    private IServiceScope _serviceScope = null;
+    private Services.IMessageReceiver _messageReceiver = null;
 
     public DeviceEventConsumer(IServiceProvider serviceProvider)
     {

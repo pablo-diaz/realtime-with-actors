@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -5,6 +6,8 @@ using DeviceStateServices;
 using Domain.Events;
 
 using MediatR;
+
+namespace Infrastructure.EventHandlers;
 
 public sealed class PersistenceForDeviceTemperatureHasDecreasedEvent : INotificationHandler<DeviceTemperatureHasDecreased>
 {
@@ -15,14 +18,7 @@ public sealed class PersistenceForDeviceTemperatureHasDecreasedEvent : INotifica
         this._eventStore = eventStore;
     }
 
-    public Task Handle(DeviceTemperatureHasDecreased @event, CancellationToken cancellationToken)
-    {
-        return _eventStore.StoreTemperatureChangeEvent(new TemperatureChangeEvent(
-            DeviceId: @event.DeviceId, LoggedAt: System.DateTimeOffset.UtcNow,
-            PreviousTemperature: @event.PreviousTemperature.Value,
-            NewTemperature: @event.NewTemperature.Value,
-            IsTemperatureIncrease: false,
-            Location: (Latitude: @event.WhenDeviceWasLocatedAt.Latitude, Longitude: @event.WhenDeviceWasLocatedAt.Longitude)
-        ));
-    }
+    public Task Handle(DeviceTemperatureHasDecreased @event, CancellationToken cancellationToken) =>
+        _eventStore.StoreEvent(@event, at: DateTimeOffset.UtcNow);
+
 }

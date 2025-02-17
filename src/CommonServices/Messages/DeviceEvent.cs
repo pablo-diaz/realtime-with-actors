@@ -1,12 +1,4 @@
-namespace Messages
-{
-    public class DeviceEvent
-    {
-        // "yyyy-MM-dd HH:mm:ss"
-        public string At { get; set; }
-        public string DeviceId { get; set; }
-        public decimal Temperature { get; set; }
-        public decimal Latitude { get; set; }
-        public decimal Longitude { get; set; }
-    }
-}
+namespace Messages;
+
+// 'At' should be in the following date format: "yyyy-MM-dd HH:mm:ss"
+public sealed record DeviceEvent(string At, string DeviceId, decimal Temperature, decimal Latitude, decimal Longitude);

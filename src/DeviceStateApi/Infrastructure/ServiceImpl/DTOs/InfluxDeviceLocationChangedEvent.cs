@@ -1,6 +1,6 @@
 using System;
 
-using DeviceStateServices;
+using Domain.Events;
 
 using InfluxDB.Client.Core;
 
@@ -9,37 +9,30 @@ namespace Infrastructure.ServiceImpl.Dtos;
 [Measurement("device-location-changed-event")]
 internal class InfluxDeviceLocationChangedEvent
 {
-    [Column("device-id", IsTag = true)]
-    public string? DeviceId { get; set; }
+    [Column("device-id")]
+    public string DeviceId { get; set; }
 
-    [Column("previous-latitude")]
-    public decimal? PreviousLatitude { get; set; }
+    [Column("new-latitude", IsTag = true)]
+    public decimal NewLatitude { get; set; }
 
-    [Column("previous-longitude")]
-    public decimal? PreviousLongitude { get; set; }
+    [Column("new-longitude", IsTag = true)]
+    public decimal NewLongitude { get; set; }
 
-    [Column("new-latitude")]
-    public decimal? NewLatitude { get; set; }
-
-    [Column("new-longitude")]
-    public decimal? NewLongitude { get; set; }
-
-    [Column("distance-in-kms")]
-    public decimal? DistanceInKms { get; set; }
+    [Column("distance-to-prev-loc-in-kms", IsTag = true)]
+    public decimal DistanceInKms { get; set; }
 
     [Column(IsTimestamp = true)]
     public DateTimeOffset LoggedAt { get; set; }
 
     private InfluxDeviceLocationChangedEvent() {}
 
-    public static InfluxDeviceLocationChangedEvent From(LocationChangeEvent from) =>
+    public static InfluxDeviceLocationChangedEvent From(DeviceLocationHasChanged from, DateTimeOffset at) =>
         new InfluxDeviceLocationChangedEvent {
             DeviceId = from.DeviceId,
-            PreviousLatitude = from.PreviousLocation.Latitude,
-            PreviousLongitude = from.PreviousLocation.Longitude,
             NewLatitude = from.NewLocation.Latitude,
             NewLongitude = from.NewLocation.Longitude,
-            DistanceInKms = from.distanceInKms,
-            LoggedAt = from.LoggedAt
+            DistanceInKms = from.PreviousLocation.GetDistanceInKm(to: from.NewLocation),
+            LoggedAt = at
         };
+
 }

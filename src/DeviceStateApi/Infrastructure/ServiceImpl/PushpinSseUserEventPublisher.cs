@@ -89,30 +89,30 @@ public sealed class ServerSentEventPushpinObject
     public class ServerSentEventInfo
     {
         [System.Text.Json.Serialization.JsonPropertyName("content")]
-        public string? Content { get; set; }
+        public string Content { get; set; }
     }
 
     public class ServerSentEventFormat
     {
         [System.Text.Json.Serialization.JsonPropertyName("http-stream")]
-        public ServerSentEventInfo? Info { get; set; }
+        public ServerSentEventInfo Info { get; set; }
     }
 
     public class ServerSentEventItem
     {
         [System.Text.Json.Serialization.JsonPropertyName("channel")]
-        public string? Channel { get; set; }
+        public string Channel { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("formats")]
-        public ServerSentEventFormat? Formats { get; set; }
+        public ServerSentEventFormat Formats { get; set; }
     }
 
     [System.Text.Json.Serialization.JsonPropertyName("items")]
-    public ServerSentEventItem[]? Items { get; set; }
+    public ServerSentEventItem[] Items { get; set; }
 
     public static ServerSentEventPushpinObject For(string inChannel, string eventName, string eventData) =>
         new ServerSentEventPushpinObject {
-            Items = new ServerSentEventItem[] {
+            Items = [
                 new ServerSentEventItem {
                     Channel = inChannel,
                     Formats = new ServerSentEventFormat {
@@ -121,6 +121,6 @@ public sealed class ServerSentEventPushpinObject
                         }
                     }
                 }
-            }
+            ]
         };
 }
