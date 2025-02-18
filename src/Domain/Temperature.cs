@@ -35,4 +35,7 @@ public class Temperature: ValueObject
     {
         yield return this.Value;
     }
+
+    public override string ToString() => $"Temperature: {Value}";
+
 }

@@ -50,4 +50,7 @@ public class Coords: ValueObject
         yield return this.Latitude;
         yield return this.Longitude;
     }
+
+    public override string ToString() => $"Coords: ({Latitude}, {Longitude})";
+
 }

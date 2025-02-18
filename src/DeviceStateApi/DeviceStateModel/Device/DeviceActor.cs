@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 using Domain.Common;
 using Domain.Events;
 
-using DeviceStateServices;
 using DeviceStateModel.Config;
 
 using Proto;
@@ -15,7 +15,8 @@ namespace DeviceStateModel.Device;
 
 public class DeviceActor: IActor
 {
-    private readonly Domain.Device _currentState;
+    private Domain.Device _currentState;
+    private readonly IReadOnlyList<IDomainEvent> _deviceEventsRaisedWhenCreatingDevice;
     private readonly PID _watchingZoneManager;
     private readonly IMediator _eventHandler;
     private readonly DeviceMonitoringSetup _setup;
@@ -34,11 +35,12 @@ public class DeviceActor: IActor
         if(coordsResult.IsFailure)
             LetItCrash(scenario: "Creating device actor", withReason: $"Impossible to initialize Device Actor for DevId '{withParams.DeviceId}', when creating Location coords. Reason: {coordsResult.Error}");
 
-        var newDeviceResult = Domain.Device.Create(deviceId: withParams.DeviceId, initialTemperature: initialTemperatureResult.Value, initialCoords: coordsResult.Value);
-        if(newDeviceResult.IsFailure)
-            LetItCrash(scenario: "Creating device actor", withReason: $"Impossible to initialize Device Actor for DevId '{withParams.DeviceId}', when creating device. Reason: {newDeviceResult.Error}");
+        var commandOutcome = Domain.Device.Create(deviceId: withParams.DeviceId, initialTemperature: initialTemperatureResult.Value, initialCoords: coordsResult.Value);
+        if(commandOutcome.IsFailure)
+            LetItCrash(scenario: "Creating device actor", withReason: $"Impossible to initialize Device Actor for DevId '{withParams.DeviceId}', when creating device. Reason: {commandOutcome.Error}");
 
-        this._currentState = newDeviceResult.Value;
+        this._currentState = commandOutcome.Value.AggregateResult;
+        this._deviceEventsRaisedWhenCreatingDevice = commandOutcome.Value.DomainEventsRaised;
         this._watchingZoneManager = withParams.WatchingZoneManager;
         this._eventHandler = withParams.EventHandler;
         this._setup = withParams.Setup;
@@ -52,36 +54,45 @@ public class DeviceActor: IActor
 
     private Task Handle(IContext context, Started message)
     {
-        ProcessAnyDomainEvents(eventPublishedCallback: _ => { });
+        ProcessAnyDomainEvents(eventsToProcess: _deviceEventsRaisedWhenCreatingDevice, eventPublishedCallback: _ => { });
         return Task.CompletedTask;
     }
 
     private Task Handle(IContext context, TemperatureTraced message)
     {
-        HandleTemperatureEvent(newTemperature: message.Temperature);
-        HandleLocationEvent(context, when: message.LoggedAt, newLocation: message.Coords);
+        var temperatureEvents = HandleTemperatureEvent(newTemperature: message.Temperature);
+        var locationEvents = HandleLocationEvent(context, when: message.LoggedAt, newLocation: message.Coords);
 
-        ProcessAnyDomainEvents(eventPublishedCallback: @event => NotifyWatchingZoneManagerForLocationChangeEvents(context, @event, when: message.LoggedAt));
+        ProcessAnyDomainEvents(eventsToProcess: temperatureEvents.Union(locationEvents),
+            eventPublishedCallback: @event => NotifyWatchingZoneManagerForLocationChangeEvents(context, @event, when: message.LoggedAt));
 
         return Task.CompletedTask;
     }
 
-    private void HandleTemperatureEvent(decimal newTemperature)
+    private IEnumerable<IDomainEvent> HandleTemperatureEvent(decimal newTemperature)
     {
         var newTemperatureResult = Domain.Temperature.For(value: newTemperature);
         if(newTemperatureResult.IsFailure)
             LetItCrash(scenario: "Processing temperature change", withReason: $"Impossible to create temperature for DevId '{_currentState.Id}'. Reason: {newTemperatureResult.Error}");
 
-        _currentState.ChangeTemperature(newTemperature: newTemperatureResult.Value, withSimilarityThreshold: _setup.TemperatureSimilarityThreshold);
+        var commandOutcome = Domain.Device.ChangeTemperature(to: _currentState, newTemperature: newTemperatureResult.Value, withSimilarityThreshold: _setup.TemperatureSimilarityThreshold);
+
+        _currentState = ApplyEvents(eventsToApply: commandOutcome.DomainEventsRaised.Cast<DeviceEvent>(), toInitialState: _currentState);
+
+        return commandOutcome.DomainEventsRaised;
     }
 
-    private void HandleLocationEvent(IContext context, string when, (decimal latitude, decimal longitude) newLocation)
+    private IEnumerable<IDomainEvent> HandleLocationEvent(IContext context, string when, (decimal latitude, decimal longitude) newLocation)
     {
         var newCoordsResult = Domain.Coords.For(latitude: newLocation.latitude, longitude: newLocation.longitude);
         if(newCoordsResult.IsFailure)
             LetItCrash(scenario: "Processing location change event", withReason: $"Impossible to handle change of location for DevId '{_currentState.Id}'. Reason: {newCoordsResult.Error}");
 
-        _currentState.ChangeLocation(newLocation: newCoordsResult.Value, withAtLeastDistanceInKm: _setup.MinMovedToleratedDistanceInKms);
+        var commandOutcome = Domain.Device.ChangeLocation(to: _currentState, newLocation: newCoordsResult.Value, withAtLeastDistanceInKm: _setup.MinMovedToleratedDistanceInKms);
+
+        _currentState = ApplyEvents(eventsToApply: commandOutcome.DomainEventsRaised.Cast<DeviceEvent>(), toInitialState: _currentState);
+
+        return commandOutcome.DomainEventsRaised;
     }
 
     private void NotifyWatchingZoneManagerForLocationChangeEvents(IContext context, IDomainEvent @event, string when)
@@ -93,17 +104,14 @@ public class DeviceActor: IActor
             fromCoords: locationInfo.PreviousLocation, toCoords: locationInfo.NewLocation));
     }
 
-    private void ProcessAnyDomainEvents(Action<IDomainEvent> eventPublishedCallback)
+    private void ProcessAnyDomainEvents(IEnumerable<IDomainEvent> eventsToProcess, Action<IDomainEvent> eventPublishedCallback)
     {
-        if(_currentState.DomainEvents.Any() == false)
+        if(eventsToProcess.Any() == false)
             return;
 
-        var events = _currentState.DomainEvents.ToArray();
-        _currentState.ClearDomainEvents();
-
-        foreach(var @event in events)
+        foreach(var @event in eventsToProcess)
         {
-            _eventHandler.Publish(@event); // we're not awaiting on purpose, so that each side-effect is done in a fire-and-forget way
+            _eventHandler.Publish(@event); // we're on purpose not awaiting, so that each side-effect is done in a fire-and-forget way
             eventPublishedCallback(@event);
         }
     }
@@ -118,5 +126,9 @@ public class DeviceActor: IActor
     {
         Console.WriteLine($"[Device {_currentState.Id}]: {message}");
     }
+
+    private static Domain.Device ApplyEvents(IEnumerable<DeviceEvent> eventsToApply, Domain.Device toInitialState) =>
+        eventsToApply.Aggregate(seed: toInitialState,
+            func: (mostRecentState, eventToApply) => Domain.Device.Apply(@event: eventToApply, to: mostRecentState));
 
 }

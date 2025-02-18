@@ -8,7 +8,10 @@ public sealed record DeviceHasBeenCreated(string DeviceId, Temperature WithTempe
 
 public sealed record DeviceLocationHasChanged(string DeviceId, Coords PreviousLocation, Coords NewLocation) : DeviceEvent(DeviceId: DeviceId);
 
+public sealed record DeviceLocationHasChangedToAVeryCloseLocation(string DeviceId, Coords PreviousLocation, Coords NewLocation) : DeviceEvent(DeviceId: DeviceId);
+
 public sealed record DeviceTemperatureHasDecreased(string DeviceId, Coords WhenDeviceWasLocatedAt, Temperature PreviousTemperature, Temperature NewTemperature) : DeviceEvent(DeviceId: DeviceId);
 
 public sealed record DeviceTemperatureHasIncreased(string DeviceId, Coords WhenDeviceWasLocatedAt, Temperature PreviousTemperature, Temperature NewTemperature) : DeviceEvent(DeviceId: DeviceId);
 
+public sealed record SimilarDeviceTemperatureWasTraced(string DeviceId, Coords WhenDeviceWasLocatedAt, Temperature PreviousTemperature, Temperature NewTemperature) : DeviceEvent(DeviceId: DeviceId);
