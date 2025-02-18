@@ -61,7 +61,7 @@ public class DeviceActor: IActor
     private Task Handle(IContext context, TemperatureTraced message)
     {
         var temperatureEvents = HandleTemperatureEvent(newTemperature: message.Temperature);
-        var locationEvents = HandleLocationEvent(context, when: message.LoggedAt, newLocation: message.Coords);
+        var locationEvents = HandleLocationEvent(newLocation: message.Coords);
 
         ProcessAnyDomainEvents(eventsToProcess: temperatureEvents.Union(locationEvents),
             eventPublishedCallback: @event => NotifyWatchingZoneManagerForLocationChangeEvents(context, @event, when: message.LoggedAt));
@@ -82,7 +82,7 @@ public class DeviceActor: IActor
         return commandOutcome.DomainEventsRaised;
     }
 
-    private IEnumerable<IDomainEvent> HandleLocationEvent(IContext context, string when, (decimal latitude, decimal longitude) newLocation)
+    private IEnumerable<IDomainEvent> HandleLocationEvent((decimal latitude, decimal longitude) newLocation)
     {
         var newCoordsResult = Domain.Coords.For(latitude: newLocation.latitude, longitude: newLocation.longitude);
         if(newCoordsResult.IsFailure)

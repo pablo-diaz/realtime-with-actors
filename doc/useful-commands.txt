@@ -17,10 +17,11 @@ docker container remove some-rabbit
 # ----------------------------------------------------------------------------------------
 
 # https://github.com/fanout/docker-pushpin
+# docker pull fanout/pushpin:1.40.1
 
-docker run -d --name pushpin -p 7999:7999 -p 5560-5563:5560-5563 -v $(pwd)/config/pushpin/routes:/etc/pushpin/routes fanout/pushpin
+docker run -d --name pushpin -p 7999:7999 -p 5560-5563:5560-5563 -v $(pwd)/config/pushpin/routes:/etc/pushpin/routes fanout/pushpin:1.40.1
 
-docker run --name pushpin -p 7999:7999 -p 5560-5563:5560-5563 -v $(pwd)/config/pushpin/:/etc/pushpin/ fanout/pushpin
+docker run --name pushpin -p 7999:7999 -p 5560-5563:5560-5563 -v $(pwd)/config/pushpin/:/etc/pushpin/ fanout/pushpin:1.40.1
 
 docker exec -it pushpin /bin/bash
 
@@ -60,7 +61,15 @@ docker container remove mytelegraf
 
 # https://hub.docker.com/r/fluent/fluentd/
 
+# ----------------------------------------------------------------------------------------
 
+docker build -t eventpublisher:001 -f config/docker/event-publisher/dockerfile .
+
+docker build -t devicestate:001 -f config/docker/device-state/dockerfile .
+
+# ----------------------------------------------------------------------------------------
+
+docker logs -f eventpublisher_container | grep -E 'state|temperature|location'
 
 # ----------------------------------------------------------------------------------------
 

@@ -6,6 +6,8 @@ using Domain.Events;
 
 using MediatR;
 
+namespace DeviceStateApi.Infrastructure.EventHandlers;
+
 public sealed class UserNotificationForDeviceTemperatureHasDecreasedEvent : INotificationHandler<DeviceTemperatureHasDecreased>
 {
     private readonly IUserEventPublisher _publisher;

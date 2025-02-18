@@ -33,7 +33,7 @@ export const options = {
             vus: 10,
             iterations: 1
         },
-        fiftyDevices: {
+        /*fiftyDevices: {
             executor: 'per-vu-iterations',
             startTime: '200s',
             maxDuration: '90s',
@@ -81,7 +81,7 @@ export const options = {
             gracefulStop: '1s',
             vus: 10000,
             iterations: 1
-        }
+        }*/
     }
 };
 

@@ -6,6 +6,8 @@ using Domain.Events;
 
 using MediatR;
 
+namespace DeviceStateApi.Infrastructure.EventHandlers;
+
 public sealed class UserNotificationForDeviceLocationHasChangedEvent : INotificationHandler<DeviceLocationHasChanged>
 {
     private readonly IUserEventPublisher _publisher;

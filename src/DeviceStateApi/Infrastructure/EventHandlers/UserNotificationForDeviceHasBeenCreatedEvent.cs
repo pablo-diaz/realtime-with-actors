@@ -6,6 +6,8 @@ using Domain.Events;
 
 using MediatR;
 
+namespace DeviceStateApi.Infrastructure.EventHandlers;
+
 public sealed class UserNotificationForDeviceHasBeenCreatedEvent : INotificationHandler<DeviceHasBeenCreated>
 {
     private readonly IUserEventPublisher _publisher;

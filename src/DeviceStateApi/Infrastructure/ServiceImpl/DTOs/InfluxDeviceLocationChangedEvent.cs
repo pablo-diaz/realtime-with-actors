@@ -21,6 +21,9 @@ internal class InfluxDeviceLocationChangedEvent
     [Column("distance-to-prev-loc-in-kms", IsTag = true)]
     public decimal DistanceInKms { get; set; }
 
+    [Column("event-type", IsTag = true)]
+    public string EventType { get; set; }
+
     [Column(IsTimestamp = true)]
     public DateTimeOffset LoggedAt { get; set; }
 
@@ -32,7 +35,19 @@ internal class InfluxDeviceLocationChangedEvent
             NewLatitude = from.NewLocation.Latitude,
             NewLongitude = from.NewLocation.Longitude,
             DistanceInKms = from.PreviousLocation.GetDistanceInKm(to: from.NewLocation),
-            LoggedAt = at
+            LoggedAt = at,
+            EventType = "DeviceLocationHasChanged"
+        };
+
+    public static InfluxDeviceLocationChangedEvent From(DeviceLocationHasChangedToAVeryCloseLocation from, DateTimeOffset at) =>
+        new InfluxDeviceLocationChangedEvent
+        {
+            DeviceId = from.DeviceId,
+            NewLatitude = from.NewLocation.Latitude,
+            NewLongitude = from.NewLocation.Longitude,
+            DistanceInKms = from.PreviousLocation.GetDistanceInKm(to: from.NewLocation),
+            LoggedAt = at,
+            EventType = "DeviceLocationHasChangedToAVeryCloseLocation"
         };
 
 }
