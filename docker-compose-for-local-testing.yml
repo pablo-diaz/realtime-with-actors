@@ -11,6 +11,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    ports:
+      - "127.0.0.1:8080:15672"
     networks:
       - backend_space
 
@@ -19,6 +21,8 @@ services:
     image: "influxdb:2.7.4"
     env_file:
       - ./config/docker/influxdb/docker-env-vars
+    ports:
+      - "127.0.0.1:8086:8086"
     volumes:
       - ./config/docker/influxdb/create-dockerlogs-bucket.sh:/docker-entrypoint-initdb.d/create-dockerlogs-bucket.sh
     networks:
