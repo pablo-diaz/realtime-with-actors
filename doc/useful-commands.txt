@@ -71,6 +71,7 @@ docker build -t devicestate:001 -f config/docker/device-state/dockerfile .
 
 docker logs -f eventpublisher_container | grep -E 'state|temperature|location'
 
+docker compose -f docker-compose-for-local-testing.yml up -d
 docker compose -f docker-compose-to-test-device-state.yml up -d
 
 # ----------------------------------------------------------------------------------------

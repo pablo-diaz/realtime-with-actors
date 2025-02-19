@@ -23,8 +23,6 @@ services:
       - ./config/docker/influxdb/docker-env-vars
     ports:
       - "127.0.0.1:8086:8086"
-    volumes:
-      - ./config/docker/influxdb/create-dockerlogs-bucket.sh:/docker-entrypoint-initdb.d/create-dockerlogs-bucket.sh
     networks:
       - backend_space
 
