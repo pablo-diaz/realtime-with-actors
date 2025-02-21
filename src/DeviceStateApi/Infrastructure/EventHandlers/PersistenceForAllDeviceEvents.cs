@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Domain.Events;
-using DeviceStateServices;
+using DeviceStateApi.Services;
 
 using MediatR;
 

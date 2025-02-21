@@ -42,19 +42,16 @@ public class Device : AggregateRoot<string>
 
         if(newTemperature.IsSimilar(to: to._mostRecentTemperatureNotifiedFor, belowSimilarityThreshold: withSimilarityThreshold))
             return new CommandOutcome(DomainEventsRaised: [
-                new SimilarDeviceTemperatureWasTraced(DeviceId: to.Id, WhenDeviceWasLocatedAt: to.CurrentLocation,
-                PreviousTemperature: to.CurrentTemperature, NewTemperature: newTemperature)]);
+                new SimilarDeviceTemperatureWasTraced(DeviceId: to.Id, NewTemperature: newTemperature)]);
 
         var previousMostRecentTemperatureNotifiedFor = to._mostRecentTemperatureNotifiedFor;
 
         if(newTemperature < previousMostRecentTemperatureNotifiedFor)
             return new CommandOutcome(DomainEventsRaised: [
-                new DeviceTemperatureHasDecreased(DeviceId: to.Id, WhenDeviceWasLocatedAt: to.CurrentLocation, 
-                PreviousTemperature: previousMostRecentTemperatureNotifiedFor, NewTemperature: newTemperature)]);
+                new DeviceTemperatureHasDecreased(DeviceId: to.Id, NewTemperature: newTemperature)]);
         else
             return new CommandOutcome(DomainEventsRaised: [
-                new DeviceTemperatureHasIncreased(DeviceId: to.Id, WhenDeviceWasLocatedAt: to.CurrentLocation,
-                PreviousTemperature: previousMostRecentTemperatureNotifiedFor, NewTemperature: newTemperature)]);
+                new DeviceTemperatureHasIncreased(DeviceId: to.Id, NewTemperature: newTemperature)]);
     }
 
     public static CommandOutcome ChangeLocation(Device to, Coords newLocation, decimal withAtLeastDistanceInKm)
@@ -64,12 +61,12 @@ public class Device : AggregateRoot<string>
 
         if (newLocation.GetDistanceInKm(to: to._mostRecentLocationNotifiedFor) < withAtLeastDistanceInKm)
             return new CommandOutcome(DomainEventsRaised: [
-                new DeviceLocationHasChangedToAVeryCloseLocation(DeviceId: to.Id, PreviousLocation: to.CurrentLocation, NewLocation: newLocation)]);
+                new DeviceLocationHasChangedToAVeryCloseLocation(DeviceId: to.Id, NewLocation: newLocation)]);
 
         var previousMostRecentLocationNotifiedFor = to._mostRecentLocationNotifiedFor;
 
         return new CommandOutcome(DomainEventsRaised: [
-            new DeviceLocationHasChanged(DeviceId: to.Id, PreviousLocation: previousMostRecentLocationNotifiedFor, NewLocation: newLocation)]);
+            new DeviceLocationHasChanged(DeviceId: to.Id, NewLocation: newLocation)]);
     }
 
     #endregion
@@ -77,7 +74,7 @@ public class Device : AggregateRoot<string>
     #region Event appliers
 
     public static Device Apply(DeviceEvent @event, Device to) => @event switch {
-        DeviceHasBeenCreated e when to is null =>                               Apply(e),
+        DeviceHasBeenCreated e when to is not null =>                           to.Apply(e),
         SimilarDeviceTemperatureWasTraced e when to is not null =>              to.Apply(e),
         DeviceTemperatureHasDecreased e when to is not null =>                  to.Apply(e),
         DeviceTemperatureHasIncreased e when to is not null =>                  to.Apply(e),
@@ -86,8 +83,18 @@ public class Device : AggregateRoot<string>
         _ =>                                                                    to
     };
 
-    private static Device Apply(DeviceHasBeenCreated @event) =>
-        new Device(id: @event.DeviceId, initialTemperature: @event.WithTemperature, initialCoords: @event.AtLocation);
+    private Device Apply(DeviceHasBeenCreated @event)
+    {
+        if (@event.DeviceId != this.Id) return this;
+
+        CurrentTemperature = @event.WithTemperature;
+        _mostRecentTemperatureNotifiedFor = @event.WithTemperature;
+
+        CurrentLocation = @event.AtLocation;
+        _mostRecentLocationNotifiedFor = @event.AtLocation;
+
+        return this;
+    }
 
     private Device Apply(SimilarDeviceTemperatureWasTraced @event)
     {

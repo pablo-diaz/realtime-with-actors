@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace DeviceStateServices;
+namespace DeviceStateApi.Services;
 
 public interface IEventStore: IDisposable
 {

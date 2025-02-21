@@ -1,7 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
-using DeviceStateServices;
+using DeviceStateApi.Services;
 
 using Domain.Events;
 
@@ -10,7 +11,7 @@ using Infrastructure.ServiceImpl.Dtos;
 using InfluxDB.Client;
 using InfluxDB.Client.Api.Domain;
 
-namespace Infrastructure;
+namespace Infrastructure.ServiceImpl;
 
 public sealed class InlfuxDbEventStore : IEventStore
 {

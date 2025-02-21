@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Domain.Common;
 using Domain.Events;
 
+using DeviceStateApi.Services;
 using DeviceStateModel.Config;
 
 using Proto;
@@ -20,10 +21,11 @@ public class DeviceActor: IActor
     private readonly PID _watchingZoneManager;
     private readonly IMediator _eventHandler;
     private readonly DeviceMonitoringSetup _setup;
+    private readonly IQueryServiceForEventStore _queryForEventStore;
 
     public sealed record InitialCoords(decimal Latitude, decimal Longitude);
     public sealed record InstantiatingParams(string DeviceId, decimal InitialTemperature, InitialCoords InitialCoords,
-        PID WatchingZoneManager, IMediator EventHandler, DeviceMonitoringSetup Setup);
+        PID WatchingZoneManager, IMediator EventHandler, DeviceMonitoringSetup Setup, IQueryServiceForEventStore QueryForEventStore);
 
     public DeviceActor(InstantiatingParams withParams)
     {
@@ -44,6 +46,7 @@ public class DeviceActor: IActor
         this._watchingZoneManager = withParams.WatchingZoneManager;
         this._eventHandler = withParams.EventHandler;
         this._setup = withParams.Setup;
+        this._queryForEventStore = withParams.QueryForEventStore;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
@@ -52,10 +55,17 @@ public class DeviceActor: IActor
         _ => Task.CompletedTask
     };
 
-    private Task Handle(IContext context, Started message)
+    private async Task Handle(IContext context, Started message)
     {
-        ProcessAnyDomainEvents(eventsToProcess: _deviceEventsRaisedWhenCreatingDevice, eventPublishedCallback: _ => { });
-        return Task.CompletedTask;
+        var eventsToRecoverState = await _queryForEventStore.GetEvents(forDeviceId: _currentState.Id);
+        var isThisDeviceBrandNew = false == eventsToRecoverState.Any();
+        if (isThisDeviceBrandNew)
+        { 
+            ProcessAnyDomainEvents(eventsToProcess: _deviceEventsRaisedWhenCreatingDevice, eventPublishedCallback: _ => { });
+            return;
+        }
+
+        RecoverState(fromEvents: eventsToRecoverState);
     }
 
     private Task Handle(IContext context, TemperatureTraced message)
@@ -101,7 +111,7 @@ public class DeviceActor: IActor
             return;
 
         context.Send(_watchingZoneManager, new WatchingZone.DeviceLocationChanged(deviceId: _currentState.Id, when: when,
-            fromCoords: locationInfo.PreviousLocation, toCoords: locationInfo.NewLocation));
+            toCoords: locationInfo.NewLocation));
     }
 
     private void ProcessAnyDomainEvents(IEnumerable<IDomainEvent> eventsToProcess, Action<IDomainEvent> eventPublishedCallback)
@@ -114,6 +124,11 @@ public class DeviceActor: IActor
             _eventHandler.Publish(@event); // we're on purpose not awaiting, so that each side-effect is done in a fire-and-forget way
             eventPublishedCallback(@event);
         }
+    }
+
+    private void RecoverState(IReadOnlyList<DeviceEvent> fromEvents)
+    {
+        _currentState = ApplyEvents(eventsToApply: fromEvents, toInitialState: _currentState);
     }
 
     private void LetItCrash(string scenario, string withReason)

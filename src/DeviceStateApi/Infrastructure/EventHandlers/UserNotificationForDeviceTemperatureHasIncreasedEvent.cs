@@ -19,8 +19,7 @@ public sealed class UserNotificationForDeviceTemperatureHasIncreasedEvent : INot
 
     public Task Handle(DeviceTemperatureHasIncreased @event, CancellationToken cancellationToken)
     {
-        _publisher.PublishDeviceTemperatureHasIncreasedEvent(forDeviceId: @event.DeviceId, previousTemperature: @event.PreviousTemperature.Value, newTemperature: @event.NewTemperature.Value,
-            whileLocatedAt: (latitude: @event.WhenDeviceWasLocatedAt.Latitude, longitude: @event.WhenDeviceWasLocatedAt.Longitude));
+        _publisher.PublishDeviceTemperatureHasIncreasedEvent(forDeviceId: @event.DeviceId, newTemperature: @event.NewTemperature.Value);
             
         return Task.CompletedTask;
     }

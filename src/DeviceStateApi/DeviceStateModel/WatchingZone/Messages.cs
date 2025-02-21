@@ -1,3 +1,3 @@
 namespace DeviceStateModel.WatchingZone;
 
-public record DeviceLocationChanged(string deviceId, string when, Domain.Coords fromCoords, Domain.Coords toCoords);
+public record DeviceLocationChanged(string deviceId, string when, Domain.Coords toCoords);

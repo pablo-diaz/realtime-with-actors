@@ -30,43 +30,29 @@ public sealed class PushpinSseUserEventPublisher : IUserEventPublisher
             })));
     }
 
-    public Task PublishDeviceTemperatureHasIncreasedEvent(string forDeviceId, decimal previousTemperature, decimal newTemperature, (decimal latitude, decimal longitude) whileLocatedAt)
+    public Task PublishDeviceTemperatureHasIncreasedEvent(string forDeviceId, decimal newTemperature)
     {
         return PublishServerSentEvent(ServerSentEventPushpinObject.For(inChannel: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream,
             eventName: "DeviceTemperatureHasIncreased", eventData: System.Text.Json.JsonSerializer.Serialize(new {
                 DevId = forDeviceId,
-                PrevTemp = previousTemperature,
-                NewTemp = newTemperature,
-                Coords = new {
-                    Lat = whileLocatedAt.latitude,
-                    Lon = whileLocatedAt.longitude
-                }
+                NewTemp = newTemperature
             })));
     }
 
-    public Task PublishDeviceTemperatureHasDecreasedEvent(string forDeviceId, decimal previousTemperature, decimal newTemperature, (decimal latitude, decimal longitude) whileLocatedAt)
+    public Task PublishDeviceTemperatureHasDecreasedEvent(string forDeviceId, decimal newTemperature)
     {
         return PublishServerSentEvent(ServerSentEventPushpinObject.For(inChannel: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream,
             eventName: "DeviceTemperatureHasDecreased", eventData: System.Text.Json.JsonSerializer.Serialize(new {
                 DevId = forDeviceId,
-                PrevTemp = previousTemperature,
-                NewTemp = newTemperature,
-                Coords = new {
-                    Lat = whileLocatedAt.latitude,
-                    Lon = whileLocatedAt.longitude
-                }
+                NewTemp = newTemperature
             })));
     }
 
-    public Task PublishDeviceLocationHasChangedEvent(string forDeviceId, (decimal latitude, decimal longitude) previousLocation, (decimal latitude, decimal longitude) newLocation)
+    public Task PublishDeviceLocationHasChangedEvent(string forDeviceId, (decimal latitude, decimal longitude) newLocation)
     {
         return PublishServerSentEvent(ServerSentEventPushpinObject.For(inChannel: DeviceStateConstants.Constants.ChannelNameForGeneralDeviceEventStream,
             eventName: "DeviceLocationHasChanged", eventData: System.Text.Json.JsonSerializer.Serialize(new {
                 DeviceId = forDeviceId,
-                PrevLoc = new {
-                    Lat = previousLocation.latitude,
-                    Lon = previousLocation.longitude
-                },
                 NewLoc = new {
                     Lat = newLocation.latitude,
                     Lon = newLocation.longitude

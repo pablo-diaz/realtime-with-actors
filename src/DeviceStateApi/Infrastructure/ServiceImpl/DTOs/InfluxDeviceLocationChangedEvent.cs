@@ -18,9 +18,6 @@ internal class InfluxDeviceLocationChangedEvent
     [Column("new-longitude", IsTag = true)]
     public decimal NewLongitude { get; set; }
 
-    [Column("distance-to-prev-loc-in-kms", IsTag = true)]
-    public decimal DistanceInKms { get; set; }
-
     [Column("event-type", IsTag = true)]
     public string EventType { get; set; }
 
@@ -34,7 +31,6 @@ internal class InfluxDeviceLocationChangedEvent
             DeviceId = from.DeviceId,
             NewLatitude = from.NewLocation.Latitude,
             NewLongitude = from.NewLocation.Longitude,
-            DistanceInKms = from.PreviousLocation.GetDistanceInKm(to: from.NewLocation),
             LoggedAt = at,
             EventType = "DeviceLocationHasChanged"
         };
@@ -45,7 +41,6 @@ internal class InfluxDeviceLocationChangedEvent
             DeviceId = from.DeviceId,
             NewLatitude = from.NewLocation.Latitude,
             NewLongitude = from.NewLocation.Longitude,
-            DistanceInKms = from.PreviousLocation.GetDistanceInKm(to: from.NewLocation),
             LoggedAt = at,
             EventType = "DeviceLocationHasChangedToAVeryCloseLocation"
         };

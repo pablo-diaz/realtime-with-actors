@@ -1,12 +1,13 @@
+using DeviceStateApi.Services;
 using DeviceStateModel.Device;
 using DeviceStateModel.WatchingZone;
-
-using Microsoft.Extensions.DependencyInjection;
 
 using Proto;
 using Proto.DependencyInjection;
 
 using MediatR;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
 
@@ -19,10 +20,12 @@ public static class ActorSystemConfigurationExtensions
                 .WithServiceProvider(provider);
 
             var eventHandler = provider.GetService<IMediator>()!;
+            var queryForEventStore = provider.GetService<IQueryServiceForEventStore>()!;
 
             var watchingZoneManagerProps = Props.FromProducer(() => new WatchingZoneManagerActor(eventHandler: eventHandler));
             var deviceManagerProps = Props.FromProducer(() => new DeviceManagerActor(
-                watchingZoneManager: actorSystem.Root.Spawn(watchingZoneManagerProps), eventHandler: eventHandler, withSetup: withSetup));
+                watchingZoneManager: actorSystem.Root.Spawn(watchingZoneManagerProps), eventHandler: eventHandler,
+                withSetup: withSetup, queryForEventStore: queryForEventStore));
 
             return new ActorSystemConfiguration(withActorSystem: actorSystem, withDeviceManagerActor: actorSystem.Root.Spawn(deviceManagerProps));
         });

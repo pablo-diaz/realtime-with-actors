@@ -20,7 +20,6 @@ public sealed class UserNotificationForDeviceLocationHasChangedEvent : INotifica
     public Task Handle(DeviceLocationHasChanged @event, CancellationToken cancellationToken)
     {
         _publisher.PublishDeviceLocationHasChangedEvent(forDeviceId: @event.DeviceId,
-            previousLocation: (latitude: @event.PreviousLocation.Latitude, longitude: @event.PreviousLocation.Longitude),
             newLocation: (latitude: @event.NewLocation.Latitude, longitude: @event.NewLocation.Longitude));
 
         return Task.CompletedTask;

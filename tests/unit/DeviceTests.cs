@@ -43,9 +43,10 @@ public class DeviceTests
     {
         var location = CreateLocation();
         var temperature = CreateTemperature();
+        var device = CreateDevice(maybeWithDeviceId: "A device id to test with");
         var eventToApply = new DeviceHasBeenCreated(DeviceId: "A device id to test with", WithTemperature: temperature, AtLocation: location);
 
-        var newDevice = Device.Apply(@event: eventToApply, to: null);
+        var newDevice = Device.Apply(@event: eventToApply, to: device);
 
         newDevice.Should().NotBeNull();
 
@@ -86,8 +87,7 @@ public class DeviceTests
         device.CurrentTemperature.Should().Be((Temperature)10.30M);
         commandOutcome.DomainEventsRaised.Should()
             .HaveCount(1)
-            .And.ContainEquivalentOf(new SimilarDeviceTemperatureWasTraced(DeviceId: device.Id, WhenDeviceWasLocatedAt: device.CurrentLocation,
-                PreviousTemperature: (Temperature)10.30M, NewTemperature: (Temperature)10.35M));
+            .And.ContainEquivalentOf(new SimilarDeviceTemperatureWasTraced(DeviceId: device.Id, NewTemperature: (Temperature)10.35M));
     }
 
     [Test]
@@ -95,7 +95,7 @@ public class DeviceTests
     public void Test_WhenApplyingEventForSimilarDeviceTemperatureWasTraced_NewTemperatureShouldHaveBeenApplied()
     {
         var device = CreateDevice(maybeWithTemperature: CreateTemperature(maybeWithValue: 10.30M));
-        var eventToApply = new SimilarDeviceTemperatureWasTraced(DeviceId: device.Id, WhenDeviceWasLocatedAt: device.CurrentLocation, PreviousTemperature: (Temperature)10.30M, NewTemperature: (Temperature)10.35M);
+        var eventToApply = new SimilarDeviceTemperatureWasTraced(DeviceId: device.Id, NewTemperature: (Temperature)10.35M);
 
         device = Device.Apply(@event: eventToApply, to: device);
 
@@ -115,23 +115,21 @@ public class DeviceTests
         device.CurrentTemperature.Should().Be((Temperature)10.30M);
         commandOutcome.DomainEventsRaised.Should()
             .HaveCount(1)
-            .And.ContainEquivalentOf(new SimilarDeviceTemperatureWasTraced(DeviceId: device.Id, WhenDeviceWasLocatedAt: device.CurrentLocation,
-                PreviousTemperature: (Temperature)10.30M, NewTemperature: (Temperature)9.5M));
+            .And.ContainEquivalentOf(new SimilarDeviceTemperatureWasTraced(DeviceId: device.Id, NewTemperature: (Temperature)9.5M));
     }
 
     [Test]
     [Category(name: "Issuing Commands")]
     public void Test_WhenCommandIsIssuedToChangeTemperature_IfNewHigherTemperatureIsAboveSimilarityThreshold_ItShouldRaiseEventForDeviceTemperatureHasIncreased()
     {
-        var location = CreateLocation();
-        var device = CreateDevice(maybeWithDeviceId: "AX-530", maybeWithTemperature: CreateTemperature(maybeWithValue: 10.30M), maybeWithLocation: location);
+        var device = CreateDevice(maybeWithDeviceId: "AX-530", maybeWithTemperature: CreateTemperature(maybeWithValue: 10.30M));
 
         var commandOutcome = Device.ChangeTemperature(to: device, newTemperature: CreateTemperature(maybeWithValue: 10.35M), withSimilarityThreshold: 0.04M);
         
         device.CurrentTemperature.Should().Be((Temperature)10.30M);
         commandOutcome.DomainEventsRaised.Should()
             .HaveCount(1)
-            .And.ContainEquivalentOf(new DeviceTemperatureHasIncreased(DeviceId: "AX-530", PreviousTemperature: (Temperature)10.30M, NewTemperature: (Temperature)10.35M, WhenDeviceWasLocatedAt: location));
+            .And.ContainEquivalentOf(new DeviceTemperatureHasIncreased(DeviceId: "AX-530", NewTemperature: (Temperature)10.35M));
     }
 
     [Test]
@@ -139,7 +137,7 @@ public class DeviceTests
     public void Test_WhenApplyingEventForDeviceTemperatureHasIncreased_NewTemperatureShouldHaveBeenApplied()
     {
         var device = CreateDevice(maybeWithTemperature: CreateTemperature(maybeWithValue: 10.30M));
-        var eventToApply = new DeviceTemperatureHasIncreased(DeviceId: device.Id, WhenDeviceWasLocatedAt: device.CurrentLocation, PreviousTemperature: (Temperature)10.30M, NewTemperature: (Temperature)11.55M);
+        var eventToApply = new DeviceTemperatureHasIncreased(DeviceId: device.Id, NewTemperature: (Temperature)11.55M);
 
         device = Device.Apply(@event: eventToApply, to: device);
 
@@ -152,15 +150,14 @@ public class DeviceTests
     [Category(name: "Issuing Commands")]
     public void Test_WhenCommandIsIssuedToChangeTemperature_IfNewLowerTemperatureIsAboveSimilarityThreshold_ItShouldRaiseEventForDeviceTemperatureHasDecreased()
     {
-        var location = CreateLocation();
-        var device = CreateDevice(maybeWithDeviceId: "AX-530", maybeWithTemperature: CreateTemperature(maybeWithValue: 10.30M), maybeWithLocation: location);
+        var device = CreateDevice(maybeWithDeviceId: "AX-530", maybeWithTemperature: CreateTemperature(maybeWithValue: 10.30M));
 
         var commandOutcome = Device.ChangeTemperature(to: device, newTemperature: CreateTemperature(maybeWithValue: 8.55M), withSimilarityThreshold: 0.04M);
 
         device.CurrentTemperature.Should().Be((Temperature)10.30M);
         commandOutcome.DomainEventsRaised.Should()
             .HaveCount(1)
-            .And.ContainEquivalentOf(new DeviceTemperatureHasDecreased(DeviceId: "AX-530", PreviousTemperature: (Temperature)10.30M, NewTemperature: (Temperature)8.55M, WhenDeviceWasLocatedAt: location));
+            .And.ContainEquivalentOf(new DeviceTemperatureHasDecreased(DeviceId: "AX-530", NewTemperature: (Temperature)8.55M));
     }
 
     [Test]
@@ -168,7 +165,7 @@ public class DeviceTests
     public void Test_WhenApplyingEventForDeviceTemperatureHasDecreased_NewTemperatureShouldHaveBeenApplied()
     {
         var device = CreateDevice(maybeWithTemperature: CreateTemperature(maybeWithValue: 10.30M));
-        var eventToApply = new DeviceTemperatureHasDecreased(DeviceId: device.Id, WhenDeviceWasLocatedAt: device.CurrentLocation, PreviousTemperature: (Temperature)10.30M, NewTemperature: (Temperature)8.55M);
+        var eventToApply = new DeviceTemperatureHasDecreased(DeviceId: device.Id, NewTemperature: (Temperature)8.55M);
 
         device = Device.Apply(@event: eventToApply, to: device);
 
@@ -188,8 +185,7 @@ public class DeviceTests
         var temp4 = (Temperature)9.25M;
 
         var similatiryThreshold = 1.0M;
-        var location = CreateLocation();
-        var currentDeviceState = CreateDevice(maybeWithDeviceId: "AX-530", maybeWithTemperature: initialTemp, maybeWithLocation: location);
+        var currentDeviceState = CreateDevice(maybeWithDeviceId: "AX-530", maybeWithTemperature: initialTemp);
 
         var eventsRaisedSoFar = new List<DeviceEvent>();
         
@@ -212,10 +208,10 @@ public class DeviceTests
         eventsRaisedSoFar.Should()
             .HaveCount(4)
             .And.ContainInConsecutiveOrder(
-                new SimilarDeviceTemperatureWasTraced(DeviceId: "AX-530", WhenDeviceWasLocatedAt: location, PreviousTemperature: initialTemp, NewTemperature: temp1),
-                new SimilarDeviceTemperatureWasTraced(DeviceId: "AX-530", WhenDeviceWasLocatedAt: location, PreviousTemperature: temp1, NewTemperature: temp2),
-                new SimilarDeviceTemperatureWasTraced(DeviceId: "AX-530", WhenDeviceWasLocatedAt: location, PreviousTemperature: temp2, NewTemperature: temp3),
-                new DeviceTemperatureHasDecreased(DeviceId: "AX-530", WhenDeviceWasLocatedAt: location, PreviousTemperature: initialTemp, NewTemperature: temp4)
+                new SimilarDeviceTemperatureWasTraced(DeviceId: "AX-530", NewTemperature: temp1),
+                new SimilarDeviceTemperatureWasTraced(DeviceId: "AX-530", NewTemperature: temp2),
+                new SimilarDeviceTemperatureWasTraced(DeviceId: "AX-530", NewTemperature: temp3),
+                new DeviceTemperatureHasDecreased(DeviceId: "AX-530", NewTemperature: temp4)
             );
 
         currentDeviceState.CurrentTemperature.Should().Be(temp4);
@@ -245,7 +241,7 @@ public class DeviceTests
         commandOutcome.DomainEventsRaised.Should()
             .HaveCount(1)
             .And.ContainEquivalentOf(new DeviceLocationHasChangedToAVeryCloseLocation(DeviceId: device.Id,
-                PreviousLocation: (Coords)(Latitude: 20.66M, Longitude: -77.0366M), NewLocation: (Coords)(Latitude: 21.30M, Longitude: -75.1503M)));
+                NewLocation: (Coords)(Latitude: 21.30M, Longitude: -75.1503M)));
     }
 
     [Test]
@@ -254,7 +250,7 @@ public class DeviceTests
     {
         var device = CreateDevice(maybeWithLocation: (Coords)(Latitude: 20.66M, Longitude: -77.0366M));
         var eventToApply = new DeviceLocationHasChangedToAVeryCloseLocation(DeviceId: device.Id,
-                PreviousLocation: device.CurrentLocation, NewLocation: (Coords)(Latitude: 21.30M, Longitude: -75.1503M));
+            NewLocation: (Coords)(Latitude: 21.30M, Longitude: -75.1503M));
 
         device = Device.Apply(@event: eventToApply, to: device);
 
@@ -277,7 +273,6 @@ public class DeviceTests
             .HaveCount(1)
             .And.ContainEquivalentOf(new DeviceLocationHasChanged(
                 DeviceId: device.Id,
-                PreviousLocation: CreateLocation(maybeWithLatitude: 20.66M, maybeWithLongitude: -77.0366M),
                 NewLocation: CreateLocation(maybeWithLatitude: 21.30M, maybeWithLongitude: -75.1503M)));
     }
 
@@ -286,8 +281,7 @@ public class DeviceTests
     public void Test_WhenApplyingEventForDeviceLocationHasChanged_NewLocationShouldBeTracked()
     {
         var device = CreateDevice(maybeWithLocation: (Coords)(Latitude: 20.66M, Longitude: -77.0366M));
-        var eventToApply = new DeviceLocationHasChanged(DeviceId: device.Id,
-                PreviousLocation: device.CurrentLocation, NewLocation: (Coords)(Latitude: 21.30M, Longitude: -75.1503M));
+        var eventToApply = new DeviceLocationHasChanged(DeviceId: device.Id, NewLocation: (Coords)(Latitude: 21.30M, Longitude: -75.1503M));
 
         device = Device.Apply(@event: eventToApply, to: device);
 

@@ -41,7 +41,7 @@ export const options = {
             vus: 50,
             iterations: 1
         },
-        /*twoHundredDevices: {
+        twoHundredDevices: {
             executor: 'per-vu-iterations',
             startTime: '300s',
             maxDuration: '90s',
@@ -81,7 +81,7 @@ export const options = {
             gracefulStop: '1s',
             vus: 10000,
             iterations: 1
-        }*/
+        }
     }
 };
 
