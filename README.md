@@ -22,5 +22,14 @@ I acquire device data (current location and temperature) quite often, and I send
 - https://www.influxdata.com/time-series-platform/telegraf/   To monitor RabbitMQ performance
 - ASP.Net Core 8 with C#
 
-## Simulation with Stress tests
+## Simulation with stress tests
 ![Simulation](./doc/simulation01.jpg?raw=true)
+
+## K6 stress test performance metrics
+![K6](./doc/k6-stress-test-outcome.png?raw=true)
+
+## RabbitMQ message consumption
+![RMQC](./doc/rabbitmq-message-consumption.png?raw=true)
+
+## RabbitMQ consumption contention
+![RMQMC](./doc/rabbitmq-contention.png?raw=true)
