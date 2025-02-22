@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -10,6 +11,8 @@ using DeviceStateApi.Services;
 using DeviceStateModel.Config;
 
 using Proto;
+using Proto.Timers;
+
 using MediatR;
 
 namespace DeviceStateModel.Device;
@@ -22,6 +25,7 @@ public class DeviceActor: IActor
     private readonly IMediator _eventHandler;
     private readonly DeviceMonitoringSetup _setup;
     private readonly IQueryServiceForEventStore _queryForEventStore;
+    private CancellationTokenSource _mostRecentTokenSetWhenWatchingTimerForDeviceInactivity = null;
 
     public sealed record InitialCoords(decimal Latitude, decimal Longitude);
     public sealed record InstantiatingParams(string DeviceId, decimal InitialTemperature, InitialCoords InitialCoords,
@@ -50,22 +54,23 @@ public class DeviceActor: IActor
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch {
-        Started startMessage => Handle(context, startMessage),
-        TemperatureTraced temperatureMessage => Handle(context, temperatureMessage),
-        _ => Task.CompletedTask
+        Started message =>                                  Handle(context, message),
+        TemperatureTraced message =>                        Handle(context, message),
+        NoRecentActivityHasBeenTrackedFromDevice message => Handle(context, message),
+        _ =>                                                Task.CompletedTask
     };
 
     private async Task Handle(IContext context, Started message)
     {
         var eventsToRecoverState = await _queryForEventStore.GetEvents(forDeviceId: _currentState.Id);
-        var isThisDeviceBrandNew = false == eventsToRecoverState.Any();
-        if (isThisDeviceBrandNew)
-        { 
-            ProcessAnyDomainEvents(eventsToProcess: _deviceEventsRaisedWhenCreatingDevice, eventPublishedCallback: _ => { });
-            return;
-        }
+        var isThisDeviceBrandNewAndThereIsNoStateToRestore = false == eventsToRecoverState.Any();
 
-        RecoverState(fromEvents: eventsToRecoverState);
+        if (isThisDeviceBrandNewAndThereIsNoStateToRestore)
+            ProcessAnyDomainEvents(eventsToProcess: _deviceEventsRaisedWhenCreatingDevice, eventPublishedCallback: _ => { });
+        else
+            RecoverState(fromEvents: eventsToRecoverState);
+
+        SetWatchingTimerForDeviceInactivity(context);
     }
 
     private Task Handle(IContext context, TemperatureTraced message)
@@ -76,6 +81,15 @@ public class DeviceActor: IActor
         ProcessAnyDomainEvents(eventsToProcess: temperatureEvents.Union(locationEvents),
             eventPublishedCallback: @event => NotifyWatchingZoneManagerForLocationChangeEvents(context, @event, when: message.LoggedAt));
 
+        SetWatchingTimerForDeviceInactivity(context);
+
+        return Task.CompletedTask;
+    }
+
+    private Task Handle(IContext context, NoRecentActivityHasBeenTrackedFromDevice _)
+    {
+        Console.WriteLine($"[{_currentState.Id}] No recent activity has been received from device, thus we're shutting it down");
+        context.Stop(pid: context.Self);  // calling it synchronously, so that Parent receives a Terminated message for this Child that just stopped. The 'StopAsync' method somehow does not send that Terminated message to the Parent (maybe bug in Proto.Actor??)
         return Task.CompletedTask;
     }
 
@@ -145,5 +159,15 @@ public class DeviceActor: IActor
     private static Domain.Device ApplyEvents(IEnumerable<DeviceEvent> eventsToApply, Domain.Device toInitialState) =>
         eventsToApply.Aggregate(seed: toInitialState,
             func: (mostRecentState, eventToApply) => Domain.Device.Apply(@event: eventToApply, to: mostRecentState));
+
+    private void SetWatchingTimerForDeviceInactivity(IContext context)
+    {
+        _mostRecentTokenSetWhenWatchingTimerForDeviceInactivity?.Cancel();
+
+        _mostRecentTokenSetWhenWatchingTimerForDeviceInactivity = context.Scheduler().SendOnce(
+            delay: TimeSpan.FromMinutes(_setup.MinsToShutDownIdleDevice),
+            target: context.Self,
+            message: new NoRecentActivityHasBeenTrackedFromDevice(DeviceId: _currentState.Id));
+    }
 
 }

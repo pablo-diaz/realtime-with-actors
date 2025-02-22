@@ -1,10 +1,11 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 
 using DeviceStateModel.Config;
 using DeviceStateApi.Services;
+
+using CSharpFunctionalExtensions;
 
 using Proto;
 using MediatR;
@@ -17,9 +18,6 @@ public class DeviceManagerActor: IActor
     private readonly IMediator _eventHandler;
     private readonly IQueryServiceForEventStore _queryForEventStore;
     private readonly DeviceMonitoringSetup _setup;
-    private readonly Dictionary<DeviceIdentifier, PID> _devices = new();
-
-    public IImmutableSet<PID> Children => throw new NotImplementedException();
 
     private sealed record DeviceReferenceOutcome(PID DevicePid);
 
@@ -51,15 +49,18 @@ public class DeviceManagerActor: IActor
 
         return Task.CompletedTask;
     }
-
+    
     private DeviceReferenceOutcome GetOrCreateDevice(IContext context, DeviceIdentifier givenDeviceId, Func<DeviceActor> createFn)
     {
-        if(_devices.ContainsKey(givenDeviceId))
-            return new (DevicePid: _devices[givenDeviceId]);
-
-        var props = Props.FromProducer(() => createFn());
-        _devices[givenDeviceId] = context.Spawn(props);
-        return new (DevicePid: _devices[givenDeviceId]);
+        var maybeDevicePidFound = TryFindDevice(context, givenDeviceId);
+        return maybeDevicePidFound.HasValue
+            ? new (DevicePid: maybeDevicePidFound.Value)
+            : new(DevicePid: context.SpawnNamed(
+                    props: Props.FromProducer(() => createFn()),
+                    name: givenDeviceId.Id));
     }
+
+    private static Maybe<PID> TryFindDevice(IContext context, DeviceIdentifier givenDeviceId) =>
+        context.System.ProcessRegistry.Find(pattern: givenDeviceId.Id).FirstOrDefault();
 
 }
