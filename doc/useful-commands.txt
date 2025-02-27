@@ -45,6 +45,14 @@ docker container remove myinfluxdb
 
 # ----------------------------------------------------------------------------------------
 
+# https://hub.docker.com/r/eventstore/eventstore
+
+docker pull docker.eventstore.com/eventstore/eventstoredb-ee:24.10
+
+docker run --name esdb-node -d -p 2113:2113 docker.eventstore.com/eventstore/eventstoredb-ee:24.10 --insecure --run-projections=All --enable-atom-pub-over-http
+
+# ----------------------------------------------------------------------------------------
+
 # https://hub.docker.com/_/telegraf
 
 docker run -d --name mytelegraf -v $(pwd)/config/telegraf/rabbitmqfordeviceeventsqueue.conf:/etc/telegraf/telegraf.conf:ro telegraf:1.29

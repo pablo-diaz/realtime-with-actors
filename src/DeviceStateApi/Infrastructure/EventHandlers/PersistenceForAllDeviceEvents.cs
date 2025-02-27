@@ -37,7 +37,7 @@ public sealed class PersistenceForAllDeviceEvents : INotificationHandler<DeviceH
 
     public Task Handle(SimilarDeviceTemperatureWasTraced @event, CancellationToken cancellationToken) => Store(@event);
 
-    private Task Store(DeviceEvent @event) =>
-        _eventStore.StoreEvent(@event, at: DateTimeOffset.UtcNow);
+    private async Task Store(DeviceEvent @event) =>
+        await _eventStore.StoreEvent(@event, at: DateTimeOffset.UtcNow);
 
 }

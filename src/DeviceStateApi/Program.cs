@@ -6,11 +6,15 @@ using DeviceStateApi.Services;
 
 using Infrastructure;
 using Infrastructure.ServiceImpl;
+
 using DeviceStateApi.Infrastructure.ServiceImpl;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddControllers();
+
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
+
 builder.Services.AddActorSystem(
     withSetup: builder.Configuration.GetSection("DeviceMonitoringSetup").Get<DeviceStateModel.Config.DeviceMonitoringSetup>()!);
 
@@ -20,11 +24,22 @@ builder.Services.AddSingleton<Services.IMessageReceiver, Services.RabbitMqMessag
 builder.Services.AddSingleton<DeviceStateServices.IUserEventPublisher, PushpinSseUserEventPublisher>(sp =>
     new PushpinSseUserEventPublisher(config: builder.Configuration.GetSection("PushpinSetup").Get<PushpinConfig>()!));
 
-builder.Services.AddSingleton<IEventStore, InlfuxDbEventStore>(sp =>
-    new InlfuxDbEventStore(config: builder.Configuration.GetSection("InfluxDbSetup").Get<InfluxDbConfig>()!));
+var eventStoreImplementationTechnology = builder.Configuration.GetSection("EventStoreImplementationTech").Value;
 
-builder.Services.AddSingleton<IQueryServiceForEventStore, QueryServiceForEventStoreBasedOnInfluxDb>(sp =>
-    new QueryServiceForEventStoreBasedOnInfluxDb(config: builder.Configuration.GetSection("InfluxDbSetup").Get<InfluxDbConfig>()!));
+if("KurrentDb" == eventStoreImplementationTechnology)
+{
+    builder.Services.AddOptions<KurrentDbConfig>().Bind(builder.Configuration.GetSection("KurrentDbSetup"));
+    builder.Services.AddSingleton<IEventStore, KurrentDbEventStore>();
+    builder.Services.AddSingleton<IQueryServiceForEventStore, QueryServiceForEventStoreBasedOnKurrentDb>();
+}
+else if ("InfluxDb" == eventStoreImplementationTechnology)
+{
+    builder.Services.AddSingleton<IEventStore, InlfuxDbEventStore>(sp =>
+        new InlfuxDbEventStore(config: builder.Configuration.GetSection("InfluxDbSetup").Get<InfluxDbConfig>()!));
+
+    builder.Services.AddSingleton<IQueryServiceForEventStore, QueryServiceForEventStoreBasedOnInfluxDb>(sp =>
+        new QueryServiceForEventStoreBasedOnInfluxDb(config: builder.Configuration.GetSection("InfluxDbSetup").Get<InfluxDbConfig>()!));
+}
 
 builder.Services.AddHostedService<Jobs.DeviceEventConsumer>();
 

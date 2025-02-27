@@ -29,6 +29,16 @@ services:
     networks:
       - backend_space
 
+  eventstoreserver:
+    container_name: eventstore_container
+    image: "docker.eventstore.com/eventstore/eventstoredb-ee:24.10"
+    env_file:
+      - ./config/docker/eventstore/docker-env-vars
+    ports:
+      - "127.0.0.1:2113:2113"
+    networks:
+      - backend_space
+  
   pushnotificationsserver:
     container_name: pushnotifications_container
     image: "fanout/pushpin:1.40.1"

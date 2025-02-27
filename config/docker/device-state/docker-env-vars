@@ -7,7 +7,9 @@ DeviceMonitoringSetup__TemperatureSimilarityThreshold=2.0
 DeviceMonitoringSetup__MinMovedToleratedDistanceInKms=1.0
 DeviceMonitoringSetup__MinsToShutDownIdleDevice: 5
 PushpinSetup__SSE__ServiceBaseUrl=http://pushnotificationsserver:5561
+EventStoreImplementationTech=KurrentDb
 InfluxDbSetup__ServiceUrl=http://timeseriesserver:8086
 InfluxDbSetup__ServiceToken=EIKFDKIF1R4zs0KrvYpJPVoYiFJ4pJfvSuEjkvOf_kgDHOTuBml5R2TJXem3zEjQkJLZZ5BPYTO-clj2-e6pgQ==
 InfluxDbSetup__Bucket=device-events-db
 InfluxDbSetup__Organization=personal
+KurrentDbSetup__ConnectionString=esdb://admin:changeit@eventstoreserver:2113?tls=false&tlsVerifyCert=false
