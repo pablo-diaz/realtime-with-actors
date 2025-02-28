@@ -36,6 +36,13 @@ services:
       - ./config/docker/eventstore/docker-env-vars
     ports:
       - "127.0.0.1:2113:2113"
+    volumes:
+      - type: volume
+        source: eventstore-volume-data
+        target: /var/lib/eventstore
+      - type: volume
+        source: eventstore-volume-logs
+        target: /var/log/eventstore
     networks:
       - backend_space
   
@@ -82,3 +89,7 @@ networks:
   backend_space:
     name: backend_network
     driver: bridge
+    
+volumes:
+  eventstore-volume-data:
+  eventstore-volume-logs:
