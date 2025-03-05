@@ -164,10 +164,14 @@ public class DeviceActor: IActor
     {
         _mostRecentTokenSetWhenWatchingTimerForDeviceInactivity?.Cancel();
 
+        if (false == ShouldSetWatchingTimerForDeviceInactivity()) return;
+
         _mostRecentTokenSetWhenWatchingTimerForDeviceInactivity = context.Scheduler().SendOnce(
             delay: TimeSpan.FromMinutes(_setup.MinsToShutDownIdleDevice),
             target: context.Self,
             message: new NoRecentActivityHasBeenTrackedFromDevice(DeviceId: _currentState.Id));
     }
+
+    private bool ShouldSetWatchingTimerForDeviceInactivity() => _setup.MinsToShutDownIdleDevice > 0;
 
 }

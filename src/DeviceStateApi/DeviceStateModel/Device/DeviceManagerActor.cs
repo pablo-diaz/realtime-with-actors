@@ -9,6 +9,8 @@ using CSharpFunctionalExtensions;
 
 using Proto;
 using MediatR;
+using Proto.Context;
+using System.Collections.Generic;
 
 namespace DeviceStateModel.Device;
 
@@ -56,11 +58,33 @@ public class DeviceManagerActor: IActor
         return maybeDevicePidFound.HasValue
             ? new (DevicePid: maybeDevicePidFound.Value)
             : new(DevicePid: context.SpawnNamed(
-                    props: Props.FromProducer(() => createFn()),
+                    props: Props.FromProducer(() => createFn())
+                                .WithContextDecorator(defaultContext => {
+                                    if(defaultContext is not ActorContext newActorContext) return defaultContext;
+
+                                    var metricTagsSpecification = newActorContext.GetType().GetField("_metricTags", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                                    var defaultMetricTags = metricTagsSpecification.GetValue(newActorContext) as KeyValuePair<string, object>[];
+                                    if(defaultMetricTags is null) return defaultContext;
+
+                                    var newMetricTags = new List<KeyValuePair<string, object>>();
+                                    newMetricTags.AddRange(defaultMetricTags);
+                                    newMetricTags.Add(new("deviceid", givenDeviceId.Id));
+
+                                    metricTagsSpecification.SetValue(newActorContext, newMetricTags.ToArray());
+
+                                    return newActorContext;
+                                }),
                     name: givenDeviceId.Id));
     }
 
     private static Maybe<PID> TryFindDevice(IContext context, DeviceIdentifier givenDeviceId) =>
         context.System.ProcessRegistry.Find(pattern: givenDeviceId.Id).FirstOrDefault();
+
+    private sealed class AdjustedContextForMetricPurposes : ActorContextDecorator
+    {
+        public AdjustedContextForMetricPurposes(IContext ctx) : base(ctx) { }
+
+
+    }
 
 }

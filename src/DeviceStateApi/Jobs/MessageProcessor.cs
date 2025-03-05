@@ -15,4 +15,5 @@ public static class MessageProcessor
     private static TemperatureTraced Map(Messages.DeviceEvent from) =>
         new TemperatureTraced(DeviceId: from.DeviceId, LoggedAt: from.At, Temperature: from.Temperature,
             Coords: (latitude: from.Latitude, longitude: from.Longitude));
+    
 }
