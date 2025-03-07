@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using DeviceStateApi.Utils;
 using DeviceStateApi.Services;
 using DeviceStateApi.Infrastructure.ServiceImpl;
 
@@ -9,9 +10,6 @@ using Infrastructure;
 using Infrastructure.ServiceImpl;
 
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-
-using Proto.OpenTelemetry;
 
 var builder = WebApplication.CreateBuilder(args);
 ConfigureMetrics(builder);
@@ -22,19 +20,17 @@ ConfigureBackgroundJobs(builder);
 
 var app = builder.Build();
 app.MapControllers();
-app.UseOpenTelemetryPrometheusScrapingEndpoint();
+app.UseOpenTelemetryPrometheusScrapingEndpoint(); 
 app.Run();
 
 static void ConfigureMetrics(WebApplicationBuilder builder)
 {
     builder.Services.AddOpenTelemetry()
-        .ConfigureResource(b => b
-            .AddService(serviceName: "ActorModelSystem")
-            //.AddDetector( IResourceDetector
-            .Build())
         .WithMetrics(b => b
             .AddPrometheusExporter()
-            .AddProtoActorInstrumentation());
+            .AddDeviceStateInstrumentation()
+            //.AddProtoActorInstrumentation()
+        );
 }
 
 static void ConfigureApplicationServices(WebApplicationBuilder builder)

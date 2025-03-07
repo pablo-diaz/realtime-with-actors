@@ -1,4 +1,5 @@
 using DeviceStateApi.Services;
+using DeviceStateApi.DeviceStateModel.Device;
 using DeviceStateModel.Device;
 using DeviceStateModel.WatchingZone;
 
@@ -25,9 +26,12 @@ public static class ActorSystemConfigurationExtensions
             var queryForEventStore = provider.GetService<IQueryServiceForEventStore>()!;
 
             var watchingZoneManagerProps = Props.FromProducer(() => new WatchingZoneManagerActor(eventHandler: eventHandler));
+            
             var deviceManagerProps = Props.FromProducer(() => new DeviceManagerActor(
                 watchingZoneManager: actorSystem.Root.Spawn(watchingZoneManagerProps), eventHandler: eventHandler,
                 withSetup: withSetup, queryForEventStore: queryForEventStore));
+
+            actorSystem.Root.SpawnNamed(name: MetricsReporterActor.ActorNameInRegistry, props: Props.FromProducer(() => new MetricsReporterActor()));
 
             return new ActorSystemConfiguration(withActorSystem: actorSystem, withDeviceManagerActor: actorSystem.Root.Spawn(deviceManagerProps));
         });

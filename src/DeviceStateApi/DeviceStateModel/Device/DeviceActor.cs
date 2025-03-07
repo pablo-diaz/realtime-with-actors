@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Domain.Common;
 using Domain.Events;
 
+using DeviceStateApi.Utils;
 using DeviceStateApi.Services;
 using DeviceStateModel.Config;
 
@@ -62,13 +63,18 @@ public class DeviceActor: IActor
 
     private async Task Handle(IContext context, Started message)
     {
-        var eventsToRecoverState = await _queryForEventStore.GetEvents(forDeviceId: _currentState.Id);
+        IReadOnlyList<DeviceEvent> eventsToRecoverState = [];
+        if(_setup.ShouldTryToLoadActorStateFromEventLogStream)
+            eventsToRecoverState = await _queryForEventStore.GetEvents(forDeviceId: _currentState.Id);
+
         var isThisDeviceBrandNewAndThereIsNoStateToRestore = false == eventsToRecoverState.Any();
 
         if (isThisDeviceBrandNewAndThereIsNoStateToRestore)
             ProcessAnyDomainEvents(eventsToProcess: _deviceEventsRaisedWhenCreatingDevice, eventPublishedCallback: _ => { });
         else
             RecoverState(fromEvents: eventsToRecoverState);
+
+        GeneralUtils.StartPeriodicTaskToReportMetricAboutCurrentUserMessageCount(ofActor: context, withId: _currentState.Id, ActorType: typeof(DeviceActor));
 
         SetWatchingTimerForDeviceInactivity(context);
     }

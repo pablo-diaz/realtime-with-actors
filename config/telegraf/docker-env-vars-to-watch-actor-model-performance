@@ -3,4 +3,4 @@ INFLUX_TOKEN=EIKFDKIF1R4zs0KrvYpJPVoYiFJ4pJfvSuEjkvOf_kgDHOTuBml5R2TJXem3zEjQkJL
 InfluxBucket=actor-model-performance
 InfluxOrganization=personal
 PrometheusScrapperUrlForDeviceModel=http://host.docker.internal:5198/metrics
-FrequencyToPullMetrics=10s
+FrequencyToPullMetrics=30s
