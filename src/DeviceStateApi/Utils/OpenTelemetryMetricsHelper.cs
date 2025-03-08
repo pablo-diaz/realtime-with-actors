@@ -9,7 +9,6 @@ public static class OpenTelemetryMetricsHelper
 {
     private const string MeterName = "DeviceStateModel";
     private const string MetricViewNameForCurrentLengthOfInboxQueueForAnActor = "device_state_actor_mailbox_length";
-    private const int MaxNumberOfMetricEntriesAboutInboxLengthsOfActors = 20000;
 
     private static Meter Meter = new(name: MeterName, version: "1.0.0");
 
@@ -20,12 +19,13 @@ public static class OpenTelemetryMetricsHelper
 
     public sealed record CurrentLengthOfInboxQueueForAnActor(string Id, long CurrentLengthOfInboxQueue, Type ActorType);
 
-    public static MeterProviderBuilder AddDeviceStateInstrumentation(this MeterProviderBuilder builder) =>
+    public static MeterProviderBuilder AddDeviceStateInstrumentation(this MeterProviderBuilder builder,
+            int maxNumberOfMetricEntriesAboutInboxLengthsOfActors) =>
         builder.AddMeter(MeterName)
         .AddView(
             instrumentName: MetricViewNameForCurrentLengthOfInboxQueueForAnActor,
             metricStreamConfiguration: new MetricStreamConfiguration {
-                CardinalityLimit = MaxNumberOfMetricEntriesAboutInboxLengthsOfActors
+                CardinalityLimit = maxNumberOfMetricEntriesAboutInboxLengthsOfActors
             }
         );
 

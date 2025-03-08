@@ -25,11 +25,13 @@ app.Run();
 
 static void ConfigureMetrics(WebApplicationBuilder builder)
 {
+    var deviceMonitoringSetup = builder.Configuration.GetSection("DeviceMonitoringSetup").Get<DeviceStateModel.Config.DeviceMonitoringSetup>();
+
     builder.Services.AddOpenTelemetry()
         .WithMetrics(b => b
             .AddPrometheusExporter()
-            .AddDeviceStateInstrumentation()
-            //.AddProtoActorInstrumentation()
+            .AddDeviceStateInstrumentation(
+                maxNumberOfMetricEntriesAboutInboxLengthsOfActors: deviceMonitoringSetup.MaxNumberOfMetricEntriesAboutInboxLengthsOfActors)
         );
 }
 

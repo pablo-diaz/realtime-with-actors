@@ -7,4 +7,5 @@ public class DeviceMonitoringSetup
     public int MinsToShutDownIdleDevice { get; set; }
     public bool ShouldTryToLoadActorStateFromEventLogStream { get; set; }
     public int FrequencyInSecondsOfReportingMetricAboutInboxLengthOfActors { get; set; }
+    public int MaxNumberOfMetricEntriesAboutInboxLengthsOfActors { get; set; }
 }
