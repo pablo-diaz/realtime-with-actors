@@ -48,7 +48,8 @@ public class DeviceManagerActor: IActor
         GeneralUtils.StartPeriodicTaskToReportMetricAboutCurrentUserMessageCount(
             ofActor: context, 
             withId: "DeviceManagerActor", 
-            ActorType: typeof(DeviceManagerActor));
+            ActorType: typeof(DeviceManagerActor),
+            frequencyReportingThisMetric: TimeSpan.FromSeconds(_setup.FrequencyInSecondsOfReportingMetricAboutInboxLengthOfActors));
 
         return Task.CompletedTask;
     }

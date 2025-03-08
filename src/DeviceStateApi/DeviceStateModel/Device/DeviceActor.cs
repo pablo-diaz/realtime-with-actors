@@ -74,7 +74,9 @@ public class DeviceActor: IActor
         else
             RecoverState(fromEvents: eventsToRecoverState);
 
-        GeneralUtils.StartPeriodicTaskToReportMetricAboutCurrentUserMessageCount(ofActor: context, withId: _currentState.Id, ActorType: typeof(DeviceActor));
+        GeneralUtils.StartPeriodicTaskToReportMetricAboutCurrentUserMessageCount(ofActor: context,
+            withId: _currentState.Id, ActorType: typeof(DeviceActor),
+            frequencyReportingThisMetric: TimeSpan.FromSeconds(_setup.FrequencyInSecondsOfReportingMetricAboutInboxLengthOfActors));
 
         SetWatchingTimerForDeviceInactivity(context);
     }
