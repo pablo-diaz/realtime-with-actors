@@ -1,18 +1,16 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
 using DeviceStateModel.Config;
+using DeviceStateApi.Utils;
 using DeviceStateApi.Services;
 
 using CSharpFunctionalExtensions;
 
 using Proto;
-using Proto.Context;
 
 using MediatR;
-using DeviceStateApi.Utils;
 
 namespace DeviceStateModel.Device;
 
@@ -75,39 +73,25 @@ public class DeviceManagerActor: IActor
 
         _childDevices[givenDeviceId] = new(DevicePid: context.SpawnNamed(
             name: givenDeviceId.Id,
-            props: Props.FromProducer(() => createFn())
-                //.WithContextDecorator(ctx =>
-                //    TryHackActorContextToEnhanceItsPrivateMetricTags(
-                //        originalContextToHack: ctx, withDeviceId: givenDeviceId.Id)),
-            ));
+            props: Props.FromProducer(() => createFn())));
 
         return _childDevices[givenDeviceId];
     }
 
     private Maybe<PID> TryFindDevice(IContext context, DeviceIdentifier givenDeviceId)
     {
-        //context.System.ProcessRegistry.Find(pattern: givenDeviceId.Id).FirstOrDefault();
+        /*
+        * This did not work, because it was not Performant for the Throughput I needed,
+        * as it was becoming a bottleneck for this actor and messages were being stuck
+        * in its Inbox queue. I end up creating a Map of the Child Devices which
+        * improved the performance a lot, removing the bottleneck
+        * 
+        * context.System.ProcessRegistry.Find(pattern: givenDeviceId.Id).FirstOrDefault();
+        */
 
         return _childDevices.ContainsKey(givenDeviceId)
             ? _childDevices[givenDeviceId].DevicePid 
             : Maybe<PID>.None;
     }
-
-    /*
-    private static IContext TryHackActorContextToEnhanceItsPrivateMetricTags(IContext originalContextToHack, string withDeviceId)
-    {
-        if (originalContextToHack is not ActorContext newActorContext) return originalContextToHack;
-
-        var metricTagsSpecification = newActorContext.GetType().GetField("_metricTags", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (metricTagsSpecification?.GetValue(newActorContext) is not KeyValuePair<string, object>[] defaultMetricTags) return originalContextToHack;
-
-        metricTagsSpecification.SetValue(newActorContext, 
-            defaultMetricTags
-            .Select(kv => kv.Key != "id" ? kv : new KeyValuePair<string, object>("id", withDeviceId))
-            .ToArray());
-
-        return newActorContext;
-    }
-    */
 
 }
