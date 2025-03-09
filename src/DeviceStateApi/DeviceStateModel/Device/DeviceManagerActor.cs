@@ -64,16 +64,18 @@ public class DeviceManagerActor: IActor
 
         return Task.CompletedTask;
     }
-    
+
     private DeviceReferenceOutcome GetOrCreateDevice(IContext context, DeviceIdentifier givenDeviceId, Func<DeviceActor> createFn)
     {
         var maybeDevicePidFound = TryFindDevice(context, givenDeviceId);
 
         if (maybeDevicePidFound.HasValue) return new(DevicePid: maybeDevicePidFound.Value);
 
-        _childDevices[givenDeviceId] = new(DevicePid: context.SpawnNamed(
-            name: givenDeviceId.Id,
-            props: Props.FromProducer(() => createFn())));
+        _childDevices[givenDeviceId] = new(
+            DevicePid: context.SpawnNamed(
+                name: givenDeviceId.Id,
+                props: Props.FromProducer(producer: () => createFn())
+        ));
 
         return _childDevices[givenDeviceId];
     }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Domain.Events;
 using DeviceStateApi.Services;
 
+using Grpc.Core;
 using EventStore.Client;
 
 using Microsoft.Extensions.Options;
@@ -30,17 +31,26 @@ public sealed class QueryServiceForEventStoreBasedOnKurrentDb : IQueryServiceFor
         {
             var eventsQueried = new List<DeviceEvent>();
 
-            await foreach(var @event in _eventStoreClient.ReadStreamAsync(streamName: KurrentDbUtils.GetStreamName(forDeviceId),
-                                                                          direction: Direction.Forwards, revision: StreamPosition.Start))
+            var result = _eventStoreClient.ReadStreamAsync(streamName: KurrentDbUtils.GetStreamName(forDeviceId),
+                                                           direction: Direction.Forwards, revision: StreamPosition.Start);
+
+            if(await result.ReadState == ReadState.StreamNotFound)
+            {
+                result.ReadState.Dispose(); // Hack: https://github.com/EventStore/EventStore-Client-Dotnet/issues/72#issuecomment-1330294346
+                return [];
+            }
+
+            await foreach(var @event in result)
             {
                 eventsQueried.Add(Map(from: @event));
             }
 
             return eventsQueried;
         }
-        catch (StreamNotFoundException)
+        catch (RpcException ex)
         {
-            return [];
+            System.Console.Error.WriteLine($"[QueryServiceForEventStoreBasedOnKurrentDb] Whilst getting events stored for device id '{forDeviceId}', the following error ocurred: {ex.Message}");
+            throw;
         }
     }
 
