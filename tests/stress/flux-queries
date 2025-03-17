@@ -1,0 +1,29 @@
+from(bucket: "load-test-performance")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "http_req_duration")
+  |> filter(fn: (r) => r["_field"] == "value")
+  |> keep(columns: ["_value", "_time", "scenario", "status"])
+  
+  
+from(bucket: "load-test-performance")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "http_req_duration")
+  |> filter(fn: (r) => r["_field"] == "value")
+  |> keep(columns: ["_time"])
+  |> window(every: 1s)
+  |> reduce(fn: (r, accumulator) => ({total: accumulator.total + 1}), identity: {total: 0} )
+  |> group()
+  |> map(fn: (r) => ({ _time: r._start, total: r.total }))
+
+  
+from(bucket: "load-test-performance")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "http_reqs")
+  |> filter(fn: (r) => r["_field"] == "value")
+  |> keep(columns: ["_time", "_value"])
+  |> window(every: 1s)
+  |> reduce(fn: (r, accumulator) => ({total: accumulator.total + r._value}), identity: {total: 0.0} )
+  |> group()
+  |> map(fn: (r) => ({ _time: r._start, total: r.total }))
+  
+

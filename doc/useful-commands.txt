@@ -85,6 +85,12 @@ docker compose -f docker-compose-to-test-device-state-with-telegraf.yml up -d
 
 # ----------------------------------------------------------------------------------------
 
+k6 run --config slow-paced-scenarios.js testing-logic.js
+
+docker run --name k6 pabloandresd/k6:influx --version
+
+# ----------------------------------------------------------------------------------------
+
 # http://localhost:7999/UserSubscription/toGeneralDeviceEventStream/
 
 from(bucket: "device-events-db")

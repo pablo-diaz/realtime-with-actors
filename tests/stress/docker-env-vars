@@ -1,0 +1,6 @@
+K6_INFLUXDB_ADDR=http://host.docker.internal:8086
+K6_OUT=xk6-influxdb=http://host.docker.internal:8086
+K6_INFLUXDB_ORGANIZATION=personal
+K6_INFLUXDB_BUCKET=load-test-performance
+K6_INFLUXDB_TOKEN=EIKFDKIF1R4zs0KrvYpJPVoYiFJ4pJfvSuEjkvOf_kgDHOTuBml5R2TJXem3zEjQkJLZZ5BPYTO-clj2-e6pgQ==
+K6_INFLUXDB_PUSH_INTERVAL=1s

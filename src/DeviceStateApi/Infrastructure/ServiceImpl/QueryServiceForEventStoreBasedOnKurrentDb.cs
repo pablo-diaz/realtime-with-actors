@@ -29,8 +29,6 @@ public sealed class QueryServiceForEventStoreBasedOnKurrentDb : IQueryServiceFor
     {
         try
         {
-            var eventsQueried = new List<DeviceEvent>();
-
             var result = _eventStoreClient.ReadStreamAsync(streamName: KurrentDbUtils.GetStreamName(forDeviceId),
                                                            direction: Direction.Forwards, revision: StreamPosition.Start);
 
@@ -40,6 +38,7 @@ public sealed class QueryServiceForEventStoreBasedOnKurrentDb : IQueryServiceFor
                 return [];
             }
 
+            var eventsQueried = new List<DeviceEvent>();
             await foreach(var @event in result)
             {
                 eventsQueried.Add(Map(from: @event));

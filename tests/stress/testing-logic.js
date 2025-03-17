@@ -33,7 +33,7 @@ const possibleTriggers = [
     triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction, triggers.noAction
 ];
 
-const serviceUrl = "http://localhost:81";
+const serviceUrl = "http://host.docker.internal:81";
 
 const buildInitialState = (deviceId, scenarioName) => {
     return {

@@ -23,6 +23,8 @@ services:
       - ./config/docker/influxdb/docker-env-vars
     ports:
       - "127.0.0.1:8086:8086"
+    volumes:
+      - ./config/docker/influxdb/create-bucket-to-measure-load-tests.sh:/docker-entrypoint-initdb.d/initi-script-01.sh:ro
     networks:
       - backend_space
 
@@ -64,7 +66,7 @@ services:
   
   devicestateserver:
     container_name: devicestate_container
-    image: "devicestate:001"
+    image: "devicestate:002"
     env_file:
       - ./config/docker/device-state/docker-env-vars
     depends_on:
